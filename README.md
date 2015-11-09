@@ -1,6 +1,9 @@
 # Kattis CLI
 Kattis online judge command line tool.
 
+* [For Python 2](https://github.com/Kattis/kattis-cli/blob/master/submit.py)
+* [For Python 3 (beta version)](https://github.com/Kattis/kattis-cli/blob/master/submit3.py)
+
 # Configuration file
 
 Before running the submission client, you need to [download a configuration file](https://open.kattis.com/download/kattisrc). This file includes a secret personal token that allows you to log in. It should be placed in your home directory, or in the same directory as `submit.py`, and be called `.kattisrc`. 
