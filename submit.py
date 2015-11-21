@@ -70,7 +70,7 @@ class MultiPartForm(object):
 		# Build a list of lists, each containing "lines" of the
 		# request.  Each part is separated by a boundary string.
 		# Once the list is built, return a string where each
-		# line is separated by '\r\n'.  
+		# line is separated by '\r\n'.
 		parts = []
 		part_boundary = '--' + self.boundary
 
@@ -156,6 +156,7 @@ def main():
 
 	problem, ext = os.path.splitext(os.path.basename(args[0]))
 	language = _LANGUAGE_GUESS.get(ext, None)
+	guessed_language = True
 	mainclass = problem if language in _GUESS_MAINCLASS else None
 	tag=opts.tag
 	debug=opts.debug
@@ -166,6 +167,7 @@ def main():
 		mainclass = opts.mainclass
 	if opts.language:
 		language = opts.language
+		guessed_language = False
 
 	if language == None:
 		print 'No language specified, and I failed to guess language from filename extension "%s"' % (ext)
@@ -178,9 +180,9 @@ def main():
 			files.append(a)
 		seen.add(a)
 
-	submit(problem, language, files, opts.force, mainclass, tag, debug=debug)
+	submit(problem, language, files, opts.force, mainclass, tag, debug=debug, guessed_language=guessed_language)
 
-def submit(problem, language, files, force=True, mainclass=None, tag=None, username=None, password=None, token=None, debug=False):
+def submit(problem, language, files, force=True, mainclass=None, tag=None, username=None, password=None, token=None, debug=False, guessed_language=False):
 	if(debug):
 		print problem, language, files, force, mainclass, tag, username, password, token, debug
 	cfg = ConfigParser.ConfigParser()
@@ -208,10 +210,20 @@ def submit(problem, language, files, force=True, mainclass=None, tag=None, usern
 	if(tag==None):
 		tag=""
 
+	if guessed_language:
+		if language == 'Python':
+			try:
+				pyver = int(cfg.get('defaults', 'pyver'))
+				if pyver == 3:
+					language = 'Python 3'
+			except:
+				pass
+
+
 	if password == None and token == None:
 		print "Your .kattisrc file appears corrupted. It must provide a token (or a KATTIS password).\nPlease download a new .kattisrc file\n"
 		sys.exit(1)
-	
+
 	opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
 	urllib2.install_opener(opener)
 	loginurl = get_url(cfg, 'loginurl', 'login')
