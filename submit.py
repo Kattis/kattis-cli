@@ -9,6 +9,8 @@ import mimetypes
 import urllib
 import urllib2
 import traceback
+import re
+import webbrowser
 
 
 _DEFAULT_CONFIG='/usr/local/etc/kattisrc'
@@ -70,7 +72,7 @@ class MultiPartForm(object):
 		# Build a list of lists, each containing "lines" of the
 		# request.  Each part is separated by a boundary string.
 		# Once the list is built, return a string where each
-		# line is separated by '\r\n'.  
+		# line is separated by '\r\n'.
 		parts = []
 		part_boundary = '--' + self.boundary
 
@@ -211,7 +213,7 @@ def submit(problem, language, files, force=True, mainclass=None, tag=None, usern
 	if password == None and token == None:
 		print "Your .kattisrc file appears corrupted. It must provide a token (or a KATTIS password).\nPlease download a new .kattisrc file\n"
 		sys.exit(1)
-	
+
 	opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
 	urllib2.install_opener(opener)
 	loginurl = get_url(cfg, 'loginurl', 'login')
@@ -255,7 +257,16 @@ def submit(problem, language, files, force=True, mainclass=None, tag=None, usern
 	request = urllib2.Request(submission_url)
 	form.add_to_request(request)
 	try:
-		print urllib2.urlopen(request).read().replace("<br />", "\n")
+		response = urllib2.urlopen(request).read().replace("<br />", "\n")
+		print response
+
+		m = re.search(r'Submission ID: (\d+)', response)
+		if m:
+			submission_id = m.group(1)
+			print 'Open in browser (y/N)?'
+			if sys.stdin.readline().upper()[:-1] == 'Y':
+				url = '%s/%s' % (get_url(cfg, 'submissionsurl', 'submissions'), submission_id)
+				webbrowser.open(url)
 	except urllib2.URLError, e:
 		if hasattr(e, 'reason'):
 			print 'Failed to connect to Kattis server.'
