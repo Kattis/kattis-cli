@@ -1,16 +1,13 @@
 # Kattis CLI
-Kattis online judge command line tool.
-
-* [For Python 2](https://github.com/Kattis/kattis-cli/blob/master/submit.py)
-* [For Python 3 (beta version)](https://github.com/Kattis/kattis-cli/blob/master/submit3.py)
+Kattis online judge command line tool written in Python.  Runs both in Python 2 and in Python 3.
 
 # Configuration file
 
-Before running the submission client, you need to [download a configuration file](https://open.kattis.com/download/kattisrc). This file includes a secret personal token that allows you to log in. It should be placed in your home directory, or in the same directory as `submit.py`, and be called `.kattisrc`. 
+Before running the submission client, you need to [download a configuration file](https://open.kattis.com/download/kattisrc). This file includes a secret personal token that allows you to log in. It should be placed in your home directory, or in the same directory as `submit.py`, and be called `.kattisrc`.
 
 # Running the client
 
-The easiest way to use the client is if you have named your source code to *problemid*.suffix, where suffix is something suitable for the language (e.g., `.java` for Java, `.c` for C, `.cc` or `.cpp` for C++, `.py` for Python, `.cs` for C#, `.go` for Go, and so on...). 
+The easiest way to use the client is if you have named your source code to *problemid*.suffix, where suffix is something suitable for the language (e.g., `.java` for Java, `.c` for C, `.cc` or `.cpp` for C++, `.py` for Python, `.cs` for C#, `.go` for Go, and so on...).
 
 Let's assume you're solving the problem [Hello World!](https://open.kattis.com/problems/hello) (with problem id `hello`) and that your java solution is in the file `Hello.java`. Then you can simply run `submit.py Hello.java`, and the client will make the correct guesses. You will always be prompted before a submission is sent.
 
