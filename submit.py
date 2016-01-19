@@ -5,7 +5,6 @@ import os
 import sys
 import itertools
 import mimetypes
-import traceback
 import random
 import string
 if sys.version_info[0] >= 3:
@@ -23,25 +22,45 @@ else:
     urllib.request = urllib.error = urllib2
     urllib.parse = urllib
 
-_DEFAULT_CONFIG='/usr/local/etc/kattisrc'
+_DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _VERSION = 'Version: $Version: $'
-_LANGUAGE_GUESS = { '.java' : 'Java', '.c' : 'C', '.cpp' : 'C++', '.h' : 'C++', '.cc' : 'C++', '.cxx' : 'C++', '.c++' : 'C++', '.py' : 'Python', '.cs': 'C#', '.c#': 'C#', '.go': 'Go', '.m' : 'Objective-C', '.hs' : 'Haskell', '.pl' : 'Prolog', '.js': 'JavaScript', '.php': 'PHP', '.rb' : 'Ruby' }
-_GUESS_MAINCLASS  = set(['Java', 'Python'])
+_LANGUAGE_GUESS = {
+    '.java': 'Java',
+    '.c': 'C',
+    '.cpp': 'C++',
+    '.h': 'C++',
+    '.cc': 'C++',
+    '.cxx': 'C++',
+    '.c++': 'C++',
+    '.py': 'Python',
+    '.cs': 'C#',
+    '.c#': 'C#',
+    '.go': 'Go',
+    '.m': 'Objective-C',
+    '.hs': 'Haskell',
+    '.pl': 'Prolog',
+    '.js': 'JavaScript',
+    '.php': 'PHP',
+    '.rb': 'Ruby'
+}
+_GUESS_MAINCLASS = set(['Java', 'Python'])
 
-"""MultiPartForm based on code from
-http://blog.doughellmann.com/2009/07/pymotw-urllib2-library-for-opening-urls.html
 
-This since the default libraries still lack support for posting
-multipart/form-data (which is required to post files in HTTP).
-http://bugs.python.org/issue3244
-"""
 class MultiPartForm(object):
-    """Accumulate the data to be used when posting a form."""
+    """MultiPartForm based on code from
+    http://blog.doughellmann.com/2009/07/pymotw-urllib2-library-for-opening-urls.html
+
+    This since the default libraries still lack support for posting
+    multipart/form-data (which is required to post files in HTTP).
+    http://bugs.python.org/issue3244
+    """
 
     def __init__(self):
         self.form_fields = []
         self.files = []
-        self.boundary = ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(50))
+        self.boundary = ''.join(
+            random.SystemRandom().choice(string.ascii_letters)
+            for _ in range(50))
         return
 
     def get_content_type(self):
@@ -55,19 +74,20 @@ class MultiPartForm(object):
 
     def add_field(self, name, value):
         """Add a simple field to the form data."""
-        if(value==None):
-            #Assume the field is empty
-            value=""
-        #ensure value is a string
-        value=str(value)
+        if value is None:
+            # Assume the field is empty
+            value = ""
+        # ensure value is a string
+        value = str(value)
         self.form_fields.append((name, value))
         return
 
-    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
+    def add_file(self, fieldname, filename, file_handle, mimetype=None):
         """Add a file to be uploaded."""
-        body = fileHandle.read()
+        body = file_handle.read()
         if mimetype is None:
-            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            mimetype = (mimetypes.guess_type(filename)[0] or
+                        'application/octet-stream')
         self.files.append((fieldname, filename, mimetype, body))
         return
 
@@ -81,7 +101,8 @@ class MultiPartForm(object):
         return request
 
     def __str__(self):
-        """Return a string representing the form data, including attached files."""
+        """Return a string representing the form data, including attached
+        files."""
         # Build a list of lists, each containing "lines" of the
         # request.  Each part is separated by a boundary string.
         # Once the list is built, return a string where each
@@ -90,27 +111,23 @@ class MultiPartForm(object):
         part_boundary = '--' + self.boundary
 
         # Add the form fields
-        parts.extend(
-            [ part_boundary,
-              'Content-Disposition: form-data; name="%s"' % self.escape_field_name(name),
-              '',
-              value,
-            ]
-            for name, value in self.form_fields
-            )
+        parts.extend([part_boundary,
+                      ('Content-Disposition: form-data; name="%s"' %
+                       self.escape_field_name(name)),
+                      '',
+                      value]
+                     for name, value in self.form_fields)
 
         # Add the files to upload
-        parts.extend(
-            [ part_boundary,
-              'Content-Disposition: file; name="%s"; filename="%s"' % \
-                  (self.escape_field_name(field_name), filename),
-                  # FIXME: filename should be escaped using RFC 2231
-              'Content-Type: %s' % content_type,
-              '',
-              body,
-            ]
-            for field_name, filename, content_type, body in self.files
-            )
+        parts.extend([part_boundary,
+                      ('Content-Disposition: file; name="%s"; filename="%s"' %
+                       (self.escape_field_name(field_name), filename)),
+                      # FIXME: filename should be escaped using RFC 2231
+                      'Content-Type: %s' % content_type,
+                      '',
+                      body]
+                     for field_name, filename, content_type, body in self.files
+                     )
 
         # Flatten the list and add closing boundary marker,
         # then return CR+LF separated data
@@ -120,9 +137,10 @@ class MultiPartForm(object):
         return '\r\n'.join(flattened)
 
 
-_RC_HELP = \
-'''I failed to read in a config file from your home directory or from the same directory
-as this script. Please go to your Kattis installation to download a .kattisrc file.
+_RC_HELP = '''
+I failed to read in a config file from your home directory or from the
+same directory as this script. Please go to your Kattis installation
+to download a .kattisrc file.
 
 The file should look something like:
 [user]
@@ -141,6 +159,7 @@ def get_url(cfg, option, default):
     else:
         return 'https://%s/%s' % (cfg.get('kattis', 'hostname'), default)
 
+
 def confirm_or_die(problem, language, files, mainclass, tag):
     print('Problem:', problem)
     print('Language:', language)
@@ -154,14 +173,26 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         print('Cancelling')
         sys.exit(1)
 
+
 def main():
     opt = optparse.OptionParser()
-    opt.add_option('-p', '--problem', dest='problem', metavar='PROBLEM', help='Submit to problem PROBLEM. Overrides default guess (first part of first filename)', default=None)
-    opt.add_option('-m', '--mainclass', dest='mainclass', metavar='CLASS', help='Sets mainclass to CLASS. Overrides default guess (first part of first filename)', default=None)
-    opt.add_option('-l', '--language', dest='language', metavar='LANGUAGE', help='Sets language to LANGUAGE. Overrides default guess (based on suffix of first filename)', default=None)
-    opt.add_option('-t', '--tag', dest='tag', metavar='TAG', help=optparse.SUPPRESS_HELP, default="")
-    opt.add_option('-f', '--force', dest='force', help='Force, no confirmation prompt before submission', action="store_true", default=False)
-    opt.add_option('-d', '--debug', dest='debug', help='Print debug info while running', action="store_true", default=False)
+    opt.add_option('-p', '--problem', dest='problem', metavar='PROBLEM',
+                   help=''''Submit to problem PROBLEM.
+Overrides default guess (first part of first filename)''', default=None)
+    opt.add_option('-m', '--mainclass', dest='mainclass', metavar='CLASS',
+                   help='''Sets mainclass to CLASS.
+Overrides default guess (first part of first filename)''', default=None)
+    opt.add_option('-l', '--language', dest='language', metavar='LANGUAGE',
+                   help='''Sets language to LANGUAGE.
+Overrides default guess (based on suffix of first filename)''', default=None)
+    opt.add_option('-t', '--tag', dest='tag', metavar='TAG',
+                   help=optparse.SUPPRESS_HELP, default="")
+    opt.add_option('-f', '--force', dest='force',
+                   help='Force, no confirmation prompt before submission',
+                   action="store_true", default=False)
+    opt.add_option('-d', '--debug', dest='debug',
+                   help='Print debug info while running',
+                   action="store_true", default=False)
 
     opts, args = opt.parse_args()
 
@@ -172,8 +203,8 @@ def main():
     problem, ext = os.path.splitext(os.path.basename(args[0]))
     language = _LANGUAGE_GUESS.get(ext, None)
     mainclass = problem if language in _GUESS_MAINCLASS else None
-    tag=opts.tag
-    debug=opts.debug
+    tag = opts.tag
+    debug = opts.debug
 
     if opts.problem:
         problem = opts.problem
@@ -182,71 +213,80 @@ def main():
     if opts.language:
         language = opts.language
 
-    if language == None:
-        print('No language specified, and I failed to guess language from filename extension "%s"' % (ext))
+    if language is None:
+        print('''\
+No language specified, and I failed to guess language from filename
+extension "%s"''' % (ext))
         sys.exit(1)
 
     seen = set()
     files = []
-    for a in args:
-        if a not in seen:
-            files.append(a)
-        seen.add(a)
+    for arg in args:
+        if arg not in seen:
+            files.append(arg)
+        seen.add(arg)
 
     submit(problem, language, files, opts.force, mainclass, tag, debug=debug)
 
-def submit(problem, language, files, force=True, mainclass=None, tag=None, username=None, password=None, token=None, debug=False):
+
+def submit(problem, language, files, force=True, mainclass=None,
+           tag=None, username=None, password=None, token=None, debug=False):
     cfg = configparser.ConfigParser()
     if os.path.exists(_DEFAULT_CONFIG):
         cfg.read(_DEFAULT_CONFIG)
 
-    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'), os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
+    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
+                     os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
         print(_RC_HELP)
         sys.exit(1)
 
-    if(username==None):
+    if username is None:
         username = cfg.get('user', 'username')
-    if(password==None):
+    if password is None:
         try:
             password = cfg.get('user', 'password')
-        except:
+        except configparser.NoOptionError:
             pass
-    if(token==None):
+    if token is None:
         try:
             token = cfg.get('user', 'token')
-        except:
+        except configparser.NoOptionError:
             pass
-    if(mainclass==None):
-        mainclass=""
-    if(tag==None):
-        tag=""
+    if mainclass is None:
+        mainclass = ""
+    if tag is None:
+        tag = ""
 
-    if password == None and token == None:
-        print("Your .kattisrc file appears corrupted. It must provide a token (or a KATTIS password).\nPlease download a new .kattisrc file\n")
+    if password is None and token is None:
+        print('''\
+Your .kattisrc file appears corrupted. It must provide a token (or a
+KATTIS password).\nPlease download a new .kattisrc file\n''')
         sys.exit(1)
 
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
     urllib.request.install_opener(opener)
     loginurl = get_url(cfg, 'loginurl', 'login')
-    loginargs = { 'user' : username, 'script' : 'true' }
+    loginargs = {'user': username, 'script': 'true'}
     if password:
         loginargs['password'] = password
     if token:
         loginargs['token'] = token
     try:
-        urllib.request.urlopen(loginurl, urllib.parse.urlencode(loginargs).encode('ascii'))
-    except urllib.error.URLError as e:
-        if hasattr(e, 'reason'):
+        urllib.request.urlopen(
+            loginurl, urllib.parse.urlencode(loginargs).encode('ascii')
+            )
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'reason'):
             print('Failed to connect to Kattis server.')
-            print('Reason: ', e.reason)
-        elif hasattr(e, 'code'):
+            print('Reason: ', exc.reason)
+        elif hasattr(exc, 'code'):
             print('Login failed.')
-            if(e.code==403):
+            if exc.code == 403:
                 print("Incorrect Username/Password")
-            elif(e.code==404):
+            elif exc.code == 404:
                 print("Incorrect login URL (404)")
             else:
-                print('Error code: ', e.code)
+                print('Error code: ', exc.code)
         sys.exit(1)
     if not force:
         confirm_or_die(problem, language, files, mainclass, tag)
@@ -261,25 +301,26 @@ def submit(problem, language, files, force=True, mainclass=None, tag=None, usern
     form.add_field('tag', tag)
     form.add_field('script', 'true')
 
-    if(len(files)>0):
-        for file in files:
-            form.add_file('sub_file[]', os.path.basename(file), open(file))
+    if len(files) > 0:
+        for filename in files:
+            form.add_file('sub_file[]', os.path.basename(filename), open(filename))
 
     request = form.make_request(submission_url)
     try:
-        print(urllib.request.urlopen(request).read().decode('utf-8').replace("<br />", "\n"))
-    except urllib.error.URLError as e:
-        if hasattr(e, 'reason'):
+        print(urllib.request.urlopen(request).read().
+              decode('utf-8').replace("<br />", "\n"))
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'reason'):
             print('Failed to connect to Kattis server.')
-            print('Reason: ', e.reason)
-        elif hasattr(e, 'code'):
+            print('Reason: ', exc.reason)
+        elif hasattr(exc, 'code'):
             print('Login failed.')
-            if(e.code==403):
+            if exc.code == 403:
                 print("Access denied.")
-            elif(e.code==404):
+            elif exc.code == 404:
                 print("Incorrect submit URL (404)")
             else:
-                print('Error code: ', e.code)
+                print('Error code: ', exc.code)
         sys.exit(1)
 
 if __name__ == '__main__':
