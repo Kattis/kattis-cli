@@ -229,52 +229,24 @@ extension "%s"''' % (ext))
     submit(problem, language, files, opts.force, mainclass, tag, debug=debug)
 
 
-def submit(problem, language, files, force=True, mainclass=None,
-           tag=None, username=None, password=None, token=None, debug=False):
-    cfg = configparser.ConfigParser()
-    if os.path.exists(_DEFAULT_CONFIG):
-        cfg.read(_DEFAULT_CONFIG)
+def login(login_url, username, password=None, token=None):
+    """Log in to Kattis.
 
-    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
-                     os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
-        print(_RC_HELP)
-        sys.exit(1)
+    At least one of password or token needs to be provided.
 
-    if username is None:
-        username = cfg.get('user', 'username')
-    if password is None:
-        try:
-            password = cfg.get('user', 'password')
-        except configparser.NoOptionError:
-            pass
-    if token is None:
-        try:
-            token = cfg.get('user', 'token')
-        except configparser.NoOptionError:
-            pass
-    if mainclass is None:
-        mainclass = ""
-    if tag is None:
-        tag = ""
-
-    if password is None and token is None:
-        print('''\
-Your .kattisrc file appears corrupted. It must provide a token (or a
-KATTIS password).\nPlease download a new .kattisrc file\n''')
-        sys.exit(1)
+    Returns a urllib OpenerDirector object that can be used to access
+    URLs while logged in.
+    """
+    login_args = {'user': username, 'script': 'true'}
+    if password:
+        login_args['password'] = password
+    if token:
+        login_args['token'] = token
 
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
-    urllib.request.install_opener(opener)
-    loginurl = get_url(cfg, 'loginurl', 'login')
-    loginargs = {'user': username, 'script': 'true'}
-    if password:
-        loginargs['password'] = password
-    if token:
-        loginargs['token'] = token
     try:
-        urllib.request.urlopen(
-            loginurl, urllib.parse.urlencode(loginargs).encode('ascii')
-            )
+        opener.open(login_url,
+                    urllib.parse.urlencode(login_args).encode('ascii'))
     except urllib.error.URLError as exc:
         if hasattr(exc, 'reason'):
             print('Failed to connect to Kattis server.')
@@ -288,10 +260,61 @@ KATTIS password).\nPlease download a new .kattisrc file\n''')
             else:
                 print('Error code: ', exc.code)
         sys.exit(1)
+    return opener
+
+
+def login_from_config(cfg):
+    """Log in to Kattis using the access information in a kattisrc file
+
+    Returns a urllib OpenerDirector object that can be used to access
+    URLs while logged in.
+    """
+    username = cfg.get('user', 'username')
+    password = token = None
+    try:
+        password = cfg.get('user', 'password')
+    except configparser.NoOptionError:
+        pass
+    try:
+        token = cfg.get('user', 'token')
+    except configparser.NoOptionError:
+        pass
+    if password is None and token is None:
+        print('''\
+Your .kattisrc file appears corrupted. It must provide a token (or a
+KATTIS password).\nPlease download a new .kattisrc file\n''')
+        sys.exit(1)
+
+    loginurl = get_url(cfg, 'loginurl', 'login')
+    return login(loginurl, username, password, token)
+
+
+def get_config():
+    cfg = configparser.ConfigParser()
+    if os.path.exists(_DEFAULT_CONFIG):
+        cfg.read(_DEFAULT_CONFIG)
+
+    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
+                     os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
+        print(_RC_HELP)
+        sys.exit(1)
+    return cfg
+
+
+def submit(problem, language, files, force=True, mainclass=None,
+           tag=None, debug=False):
+    cfg = get_config()
+    opener = login_from_config(cfg)
+
+    if mainclass is None:
+        mainclass = ""
+    if tag is None:
+        tag = ""
+
     if not force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
-    submission_url = get_url(cfg, 'submissionurl', 'judge_upload')
+    submission_url = get_url(cfg, 'submissionurl', 'submit')
     form = MultiPartForm()
     form.add_field('submit', 'true')
     form.add_field('submit_ctr', '2')
@@ -307,7 +330,7 @@ KATTIS password).\nPlease download a new .kattisrc file\n''')
 
     request = form.make_request(submission_url)
     try:
-        print(urllib.request.urlopen(request).read().
+        print(opener.open(request).read().
               decode('utf-8').replace("<br />", "\n"))
     except urllib.error.URLError as exc:
         if hasattr(exc, 'reason'):
