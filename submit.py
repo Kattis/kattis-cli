@@ -162,6 +162,8 @@ def get_url(cfg, option, default):
 
 
 def get_config():
+    """Returns a ConfigParser object for the .kattisrc file(s)
+    """
     cfg = configparser.ConfigParser()
     if os.path.exists(_DEFAULT_CONFIG):
         cfg.read(_DEFAULT_CONFIG)
@@ -233,20 +235,18 @@ KATTIS password).\nPlease download a new .kattisrc file\n''')
     return login(loginurl, username, password, token)
 
 
-def submit(problem, language, files, force=True, mainclass=None,
-           tag=None, debug=False):
-    cfg = get_config()
-    opener = login_from_config(cfg)
+def submit(url_opener, submit_url, problem, language, files,
+           mainclass=None, tag=None, debug=False):
+    """Make a submission.
 
+    The url_opener argument is an OpenerDirector object to use (as
+    returned by the login() function)
+    """
     if mainclass is None:
         mainclass = ""
     if tag is None:
         tag = ""
 
-    if not force:
-        confirm_or_die(problem, language, files, mainclass, tag)
-
-    submission_url = get_url(cfg, 'submissionurl', 'submit')
     form = MultiPartForm()
     form.add_field('submit', 'true')
     form.add_field('submit_ctr', '2')
@@ -260,9 +260,9 @@ def submit(problem, language, files, force=True, mainclass=None,
         for filename in files:
             form.add_file('sub_file[]', os.path.basename(filename), open(filename))
 
-    request = form.make_request(submission_url)
+    request = form.make_request(submit_url)
     try:
-        print(opener.open(request).read().
+        print(url_opener.open(request).read().
               decode('utf-8').replace("<br />", "\n"))
     except urllib.error.URLError as exc:
         if hasattr(exc, 'reason'):
@@ -345,7 +345,14 @@ extension "%s"''' % (ext))
             files.append(arg)
         seen.add(arg)
 
-    submit(problem, language, files, opts.force, mainclass, tag, debug=debug)
+    cfg = get_config()
+    opener = login_from_config(cfg)
+    submit_url = get_url(cfg, 'submissionurl', 'submit')
+
+    if not opts.force:
+        confirm_or_die(problem, language, files, mainclass, tag)
+
+    submit(opener, submit_url, problem, language, files, mainclass, tag, debug=debug)
 
 
 if __name__ == '__main__':
