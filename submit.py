@@ -244,12 +244,13 @@ def submit(url_opener, submit_url, problem, language, files,
 
     if len(files) > 0:
         for filename in files:
-            form.add_file('sub_file[]', os.path.basename(filename), open(filename))
+            form.add_file('sub_file[]', os.path.basename(filename),
+                          open(filename))
 
     request = form.make_request(submit_url)
 
-    print(url_opener.open(request).read().
-          decode('utf-8').replace("<br />", "\n"))
+    return url_opener.open(request).read().decode('utf-8').replace("<br />",
+                                                                   "\n")
 
 
 def confirm_or_die(problem, language, files, mainclass, tag):
@@ -342,7 +343,7 @@ extension "%s"''' % (ext))
         confirm_or_die(problem, language, files, mainclass, tag)
 
     try:
-        submit(opener, submit_url, problem, language, files, mainclass, tag)
+        result = submit(opener, submit_url, problem, language, files, mainclass, tag)
     except urllib.error.URLError as exc:
         if hasattr(exc, 'code'):
             print('Submission failed.')
@@ -356,6 +357,8 @@ extension "%s"''' % (ext))
             print('Failed to connect to Kattis server.')
             print('Reason: ', exc.reason)
         sys.exit(1)
+
+    print(result)
 
 
 if __name__ == '__main__':
