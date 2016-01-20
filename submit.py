@@ -138,22 +138,8 @@ class MultiPartForm(object):
         return '\r\n'.join(flattened)
 
 
-class ConfigNotFoundError(Exception):
-    def __init__(self):
-        super(ConfigNotFoundError, self).__init__('''\
-I failed to read in a config file from your home directory or from the
-same directory as this script. Please go to your Kattis installation
-to download a .kattisrc file.
-
-The file should look something like this:
-[user]
-username: yourusername
-token: *********
-
-[kattis]
-loginurl: https://<kattis>/login
-submissionurl: https://<kattis>/submit
-''')
+class ConfigError(Exception):
+    pass
 
 
 def get_url(cfg, option, default):
@@ -172,7 +158,19 @@ def get_config():
 
     if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
                      os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
-        raise ConfigNotFoundError()
+        raise ConfigError('''\
+I failed to read in a config file from your home directory or from the
+same directory as this script. Please go to your Kattis installation
+to download a .kattisrc file.
+
+The file should look something like this:
+[user]
+username: yourusername
+token: *********
+
+[kattis]
+loginurl: https://<kattis>/login
+submissionurl: https://<kattis>/submit''')
     return cfg
 
 
@@ -212,10 +210,11 @@ def login_from_config(cfg):
     except configparser.NoOptionError:
         pass
     if password is None and token is None:
-        print('''\
+        raise ConfigError('''\
 Your .kattisrc file appears corrupted. It must provide a token (or a
-KATTIS password).\nPlease download a new .kattisrc file\n''')
-        sys.exit(1)
+KATTIS password).
+
+Please download a new .kattisrc file''')
 
     loginurl = get_url(cfg, 'loginurl', 'login')
     return login(loginurl, username, password, token)
@@ -317,12 +316,10 @@ extension "%s"''' % (ext))
 
     try:
         cfg = get_config()
-    except ConfigNotFoundError as exc:
+        opener = login_from_config(cfg)
+    except ConfigError as exc:
         print(exc)
         sys.exit(1)
-
-    try:
-        opener = login_from_config(cfg)
     except urllib.error.URLError as exc:
         if hasattr(exc, 'code'):
             print('Login failed.')
