@@ -138,12 +138,14 @@ class MultiPartForm(object):
         return '\r\n'.join(flattened)
 
 
-_RC_HELP = '''
+class ConfigNotFoundError(Exception):
+    def __init__(self):
+        super(ConfigNotFoundError, self).__init__('''\
 I failed to read in a config file from your home directory or from the
 same directory as this script. Please go to your Kattis installation
 to download a .kattisrc file.
 
-The file should look something like:
+The file should look something like this:
 [user]
 username: yourusername
 token: *********
@@ -151,7 +153,7 @@ token: *********
 [kattis]
 loginurl: https://<kattis>/login
 submissionurl: https://<kattis>/submit
-'''
+''')
 
 
 def get_url(cfg, option, default):
@@ -170,8 +172,7 @@ def get_config():
 
     if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
                      os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
-        print(_RC_HELP)
-        sys.exit(1)
+        raise ConfigNotFoundError()
     return cfg
 
 
@@ -190,22 +191,7 @@ def login(login_url, username, password=None, token=None):
         login_args['token'] = token
 
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
-    try:
-        opener.open(login_url,
-                    urllib.parse.urlencode(login_args).encode('ascii'))
-    except urllib.error.URLError as exc:
-        if hasattr(exc, 'reason'):
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
-        elif hasattr(exc, 'code'):
-            print('Login failed.')
-            if exc.code == 403:
-                print("Incorrect Username/Password")
-            elif exc.code == 404:
-                print("Incorrect login URL (404)")
-            else:
-                print('Error code: ', exc.code)
-        sys.exit(1)
+    opener.open(login_url, urllib.parse.urlencode(login_args).encode('ascii'))
     return opener
 
 
@@ -236,7 +222,7 @@ KATTIS password).\nPlease download a new .kattisrc file\n''')
 
 
 def submit(url_opener, submit_url, problem, language, files,
-           mainclass=None, tag=None, debug=False):
+           mainclass=None, tag=None):
     """Make a submission.
 
     The url_opener argument is an OpenerDirector object to use (as
@@ -261,22 +247,9 @@ def submit(url_opener, submit_url, problem, language, files,
             form.add_file('sub_file[]', os.path.basename(filename), open(filename))
 
     request = form.make_request(submit_url)
-    try:
-        print(url_opener.open(request).read().
-              decode('utf-8').replace("<br />", "\n"))
-    except urllib.error.URLError as exc:
-        if hasattr(exc, 'reason'):
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
-        elif hasattr(exc, 'code'):
-            print('Login failed.')
-            if exc.code == 403:
-                print("Access denied.")
-            elif exc.code == 404:
-                print("Incorrect submit URL (404)")
-            else:
-                print('Error code: ', exc.code)
-        sys.exit(1)
+
+    print(url_opener.open(request).read().
+          decode('utf-8').replace("<br />", "\n"))
 
 
 def confirm_or_die(problem, language, files, mainclass, tag):
@@ -309,9 +282,6 @@ Overrides default guess (based on suffix of first filename)''', default=None)
     opt.add_option('-f', '--force', dest='force',
                    help='Force, no confirmation prompt before submission',
                    action="store_true", default=False)
-    opt.add_option('-d', '--debug', dest='debug',
-                   help='Print debug info while running',
-                   action="store_true", default=False)
 
     opts, args = opt.parse_args()
 
@@ -323,7 +293,6 @@ Overrides default guess (based on suffix of first filename)''', default=None)
     language = _LANGUAGE_GUESS.get(ext, None)
     mainclass = problem if language in _GUESS_MAINCLASS else None
     tag = opts.tag
-    debug = opts.debug
 
     if opts.problem:
         problem = opts.problem
@@ -345,14 +314,48 @@ extension "%s"''' % (ext))
             files.append(arg)
         seen.add(arg)
 
-    cfg = get_config()
-    opener = login_from_config(cfg)
+    try:
+        cfg = get_config()
+    except ConfigNotFoundError as exc:
+        print(exc)
+        sys.exit(1)
+
+    try:
+        opener = login_from_config(cfg)
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'code'):
+            print('Login failed.')
+            if exc.code == 403:
+                print('Incorrect username or password/token (403)')
+            elif exc.code == 404:
+                print("Incorrect login URL (404)")
+            else:
+                print(exc)
+        else:
+            print('Failed to connect to Kattis server.')
+            print('Reason: ', exc.reason)
+        sys.exit(1)
+
     submit_url = get_url(cfg, 'submissionurl', 'submit')
 
     if not opts.force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
-    submit(opener, submit_url, problem, language, files, mainclass, tag, debug=debug)
+    try:
+        submit(opener, submit_url, problem, language, files, mainclass, tag)
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'code'):
+            print('Submission failed.')
+            if exc.code == 403:
+                print('Access denied (403)')
+            elif exc.code == 404:
+                print('Incorrect submit URL (404)')
+            else:
+                print(exc)
+        else:
+            print('Failed to connect to Kattis server.')
+            print('Reason: ', exc.reason)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
