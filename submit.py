@@ -66,7 +66,8 @@ class MultiPartForm(object):
     def get_content_type(self):
         return 'multipart/form-data; boundary=%s' % self.boundary
 
-    def escape_field_name(self, name):
+    @staticmethod
+    def escape_field_name(name):
         """Should escape a field name escaped following RFC 2047 if needed.
         Skipped for now as we only call it with hard coded constants.
         """
@@ -160,6 +161,124 @@ def get_url(cfg, option, default):
         return 'https://%s/%s' % (cfg.get('kattis', 'hostname'), default)
 
 
+def get_config():
+    cfg = configparser.ConfigParser()
+    if os.path.exists(_DEFAULT_CONFIG):
+        cfg.read(_DEFAULT_CONFIG)
+
+    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
+                     os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
+        print(_RC_HELP)
+        sys.exit(1)
+    return cfg
+
+
+def login(login_url, username, password=None, token=None):
+    """Log in to Kattis.
+
+    At least one of password or token needs to be provided.
+
+    Returns a urllib OpenerDirector object that can be used to access
+    URLs while logged in.
+    """
+    login_args = {'user': username, 'script': 'true'}
+    if password:
+        login_args['password'] = password
+    if token:
+        login_args['token'] = token
+
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
+    try:
+        opener.open(login_url,
+                    urllib.parse.urlencode(login_args).encode('ascii'))
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'reason'):
+            print('Failed to connect to Kattis server.')
+            print('Reason: ', exc.reason)
+        elif hasattr(exc, 'code'):
+            print('Login failed.')
+            if exc.code == 403:
+                print("Incorrect Username/Password")
+            elif exc.code == 404:
+                print("Incorrect login URL (404)")
+            else:
+                print('Error code: ', exc.code)
+        sys.exit(1)
+    return opener
+
+
+def login_from_config(cfg):
+    """Log in to Kattis using the access information in a kattisrc file
+
+    Returns a urllib OpenerDirector object that can be used to access
+    URLs while logged in.
+    """
+    username = cfg.get('user', 'username')
+    password = token = None
+    try:
+        password = cfg.get('user', 'password')
+    except configparser.NoOptionError:
+        pass
+    try:
+        token = cfg.get('user', 'token')
+    except configparser.NoOptionError:
+        pass
+    if password is None and token is None:
+        print('''\
+Your .kattisrc file appears corrupted. It must provide a token (or a
+KATTIS password).\nPlease download a new .kattisrc file\n''')
+        sys.exit(1)
+
+    loginurl = get_url(cfg, 'loginurl', 'login')
+    return login(loginurl, username, password, token)
+
+
+def submit(problem, language, files, force=True, mainclass=None,
+           tag=None, debug=False):
+    cfg = get_config()
+    opener = login_from_config(cfg)
+
+    if mainclass is None:
+        mainclass = ""
+    if tag is None:
+        tag = ""
+
+    if not force:
+        confirm_or_die(problem, language, files, mainclass, tag)
+
+    submission_url = get_url(cfg, 'submissionurl', 'submit')
+    form = MultiPartForm()
+    form.add_field('submit', 'true')
+    form.add_field('submit_ctr', '2')
+    form.add_field('language', language)
+    form.add_field('mainclass', mainclass)
+    form.add_field('problem', problem)
+    form.add_field('tag', tag)
+    form.add_field('script', 'true')
+
+    if len(files) > 0:
+        for filename in files:
+            form.add_file('sub_file[]', os.path.basename(filename), open(filename))
+
+    request = form.make_request(submission_url)
+    try:
+        print(opener.open(request).read().
+              decode('utf-8').replace("<br />", "\n"))
+    except urllib.error.URLError as exc:
+        if hasattr(exc, 'reason'):
+            print('Failed to connect to Kattis server.')
+            print('Reason: ', exc.reason)
+        elif hasattr(exc, 'code'):
+            print('Login failed.')
+            if exc.code == 403:
+                print("Access denied.")
+            elif exc.code == 404:
+                print("Incorrect submit URL (404)")
+            else:
+                print('Error code: ', exc.code)
+        sys.exit(1)
+
+
 def confirm_or_die(problem, language, files, mainclass, tag):
     print('Problem:', problem)
     print('Language:', language)
@@ -228,123 +347,6 @@ extension "%s"''' % (ext))
 
     submit(problem, language, files, opts.force, mainclass, tag, debug=debug)
 
-
-def login(login_url, username, password=None, token=None):
-    """Log in to Kattis.
-
-    At least one of password or token needs to be provided.
-
-    Returns a urllib OpenerDirector object that can be used to access
-    URLs while logged in.
-    """
-    login_args = {'user': username, 'script': 'true'}
-    if password:
-        login_args['password'] = password
-    if token:
-        login_args['token'] = token
-
-    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
-    try:
-        opener.open(login_url,
-                    urllib.parse.urlencode(login_args).encode('ascii'))
-    except urllib.error.URLError as exc:
-        if hasattr(exc, 'reason'):
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
-        elif hasattr(exc, 'code'):
-            print('Login failed.')
-            if exc.code == 403:
-                print("Incorrect Username/Password")
-            elif exc.code == 404:
-                print("Incorrect login URL (404)")
-            else:
-                print('Error code: ', exc.code)
-        sys.exit(1)
-    return opener
-
-
-def login_from_config(cfg):
-    """Log in to Kattis using the access information in a kattisrc file
-
-    Returns a urllib OpenerDirector object that can be used to access
-    URLs while logged in.
-    """
-    username = cfg.get('user', 'username')
-    password = token = None
-    try:
-        password = cfg.get('user', 'password')
-    except configparser.NoOptionError:
-        pass
-    try:
-        token = cfg.get('user', 'token')
-    except configparser.NoOptionError:
-        pass
-    if password is None and token is None:
-        print('''\
-Your .kattisrc file appears corrupted. It must provide a token (or a
-KATTIS password).\nPlease download a new .kattisrc file\n''')
-        sys.exit(1)
-
-    loginurl = get_url(cfg, 'loginurl', 'login')
-    return login(loginurl, username, password, token)
-
-
-def get_config():
-    cfg = configparser.ConfigParser()
-    if os.path.exists(_DEFAULT_CONFIG):
-        cfg.read(_DEFAULT_CONFIG)
-
-    if not cfg.read([os.path.join(os.getenv('HOME'), '.kattisrc'),
-                     os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
-        print(_RC_HELP)
-        sys.exit(1)
-    return cfg
-
-
-def submit(problem, language, files, force=True, mainclass=None,
-           tag=None, debug=False):
-    cfg = get_config()
-    opener = login_from_config(cfg)
-
-    if mainclass is None:
-        mainclass = ""
-    if tag is None:
-        tag = ""
-
-    if not force:
-        confirm_or_die(problem, language, files, mainclass, tag)
-
-    submission_url = get_url(cfg, 'submissionurl', 'submit')
-    form = MultiPartForm()
-    form.add_field('submit', 'true')
-    form.add_field('submit_ctr', '2')
-    form.add_field('language', language)
-    form.add_field('mainclass', mainclass)
-    form.add_field('problem', problem)
-    form.add_field('tag', tag)
-    form.add_field('script', 'true')
-
-    if len(files) > 0:
-        for filename in files:
-            form.add_file('sub_file[]', os.path.basename(filename), open(filename))
-
-    request = form.make_request(submission_url)
-    try:
-        print(opener.open(request).read().
-              decode('utf-8').replace("<br />", "\n"))
-    except urllib.error.URLError as exc:
-        if hasattr(exc, 'reason'):
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
-        elif hasattr(exc, 'code'):
-            print('Login failed.')
-            if exc.code == 403:
-                print("Access denied.")
-            elif exc.code == 404:
-                print("Incorrect submit URL (404)")
-            else:
-                print('Error code: ', exc.code)
-        sys.exit(1)
 
 if __name__ == '__main__':
     main()
