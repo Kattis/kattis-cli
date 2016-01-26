@@ -295,6 +295,12 @@ Overrides default guess (based on suffix of first filename)''', default=None)
         opt.print_help()
         sys.exit(1)
 
+    try:
+        cfg = get_config()
+    except ConfigError as exc:
+        print(exc)
+        sys.exit(1)
+
     problem, ext = os.path.splitext(os.path.basename(args[0]))
     language = _LANGUAGE_GUESS.get(ext, None)
     mainclass = problem if language in _GUESS_MAINCLASS else None
@@ -306,6 +312,15 @@ Overrides default guess (based on suffix of first filename)''', default=None)
         mainclass = opts.mainclass
     if opts.language:
         language = opts.language
+    else:
+        if language == 'Python':
+            try:
+                pyver = int(cfg.get('defaults', 'python-version'))
+                if pyver == 3:
+                    language = 'Python 3'
+            except:
+                pass
+
 
     if language is None:
         print('''\
@@ -321,11 +336,7 @@ extension "%s"''' % (ext))
         seen.add(arg)
 
     try:
-        cfg = get_config()
         opener = login_from_config(cfg)
-    except ConfigError as exc:
-        print(exc)
-        sys.exit(1)
     except URLError as exc:
         if hasattr(exc, 'code'):
             print('Login failed.')
