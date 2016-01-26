@@ -10,7 +10,7 @@ import string
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
-    from configparser import ConfigParser, NoOptionError
+    import configparser
     from urllib.parse import urlencode
     from urllib.error import URLError
     from urllib.request import Request, build_opener, HTTPCookieProcessor
@@ -19,7 +19,7 @@ if sys.version_info[0] >= 3:
         return str(form).encode('utf-8')
 else:
     # Python 2, import modules with Python 3 names
-    from ConfigParser import ConfigParser, NoOptionError
+    import ConfigParser as configparser
     from urllib import urlencode
     from urllib2 import URLError
     from urllib2 import Request, build_opener, HTTPCookieProcessor
@@ -158,7 +158,7 @@ def get_url(cfg, option, default):
 def get_config():
     """Returns a ConfigParser object for the .kattisrc file(s)
     """
-    cfg = ConfigParser()
+    cfg = configparser.ConfigParser()
     if os.path.exists(_DEFAULT_CONFIG):
         cfg.read(_DEFAULT_CONFIG)
 
@@ -209,11 +209,11 @@ def login_from_config(cfg):
     password = token = None
     try:
         password = cfg.get('user', 'password')
-    except NoOptionError:
+    except configparser.NoOptionError:
         pass
     try:
         token = cfg.get('user', 'token')
-    except NoOptionError:
+    except configparser.NoOptionError:
         pass
     if password is None and token is None:
         raise ConfigError('''\
