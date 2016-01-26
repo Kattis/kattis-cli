@@ -7,20 +7,28 @@ import itertools
 import mimetypes
 import random
 import string
+
+# Python 2/3 compatibility
 if sys.version_info[0] >= 3:
-    _PYTHON_VERSION = 3
     import configparser
     import urllib.parse
     import urllib.request
     import urllib.error
+
+    def form_body(form):
+        return str(form).encode('utf-8')
 else:
     # Python 2, import modules with Python 3 names
-    _PYTHON_VERSION = 2
     import ConfigParser as configparser
     import urllib
     import urllib2
     urllib.request = urllib.error = urllib2
     urllib.parse = urllib
+
+    def form_body(form):
+        return str(form)
+
+# End Python 2/3 compatibility
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _VERSION = 'Version: $Version: $'
@@ -93,9 +101,7 @@ class MultiPartForm(object):
         return
 
     def make_request(self, url):
-        body = str(self)
-        if _PYTHON_VERSION == 3:
-            body = body.encode('utf-8')
+        body = form_body(self)
         request = urllib.request.Request(url, data=body)
         request.add_header('Content-type', self.get_content_type())
         request.add_header('Content-length', len(body))
@@ -152,7 +158,7 @@ def get_url(cfg, option, default):
 def get_config():
     """Returns a ConfigParser object for the .kattisrc file(s)
     """
-    cfg = configparser.ConfigParser()
+    cfg = ConfigParser()
     if os.path.exists(_DEFAULT_CONFIG):
         cfg.read(_DEFAULT_CONFIG)
 
