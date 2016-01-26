@@ -7,6 +7,8 @@ import itertools
 import mimetypes
 import random
 import string
+import re
+import webbrowser
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
@@ -272,6 +274,18 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         sys.exit(1)
 
 
+def open_submission(submit_response, cfg):
+    submissions_url = get_url(cfg, 'submissionsurl',  'submissions')
+
+    m = re.search(r'Submission ID: (\d+)', submit_response)
+    if m:
+        submission_id = m.group(1)
+        print('Open in browser (y/N)?')
+        if sys.stdin.readline().upper()[:-1] == 'Y':
+            url = '%s/%s' % (submissions_url, submission_id)
+            webbrowser.open(url)
+
+
 def main():
     opt = optparse.OptionParser()
     opt.add_option('-p', '--problem', dest='problem', metavar='PROBLEM',
@@ -362,6 +376,11 @@ extension "%s"''' % (ext))
         sys.exit(1)
 
     print(result)
+
+    try:
+        open_submission(result, cfg)
+    except configparser.NoOptionError:
+        pass
 
 
 if __name__ == '__main__':
