@@ -337,6 +337,9 @@ extension "%s"''' % (ext))
 
     try:
         opener = login_from_config(cfg)
+    except ConfigError as exc:
+        print(exc)
+        sys.exit(1)
     except URLError as exc:
         if hasattr(exc, 'code'):
             print('Login failed.')
