@@ -230,8 +230,8 @@ extension "%s"''' % (ext))
     except ConfigError as exc:
         print(exc)
         sys.exit(1)
-    except requests.exceptions.RequestException, err:
-        print("Login connection failed: " + err.message)
+    except requests.exceptions.RequestException as err:
+        print("Login connection failed: " + str(err))
         sys.exit(1)
 
     if not login_reply.status_code == 200:
@@ -251,8 +251,8 @@ extension "%s"''' % (ext))
 
     try:
         result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
-    except requests.exceptions.RequestException, err:
-        print("Submit connection failed: " + err.message)
+    except requests.exceptions.RequestException as err:
+        print("Submit connection failed: " + str(err))
         sys.exit(1)
 
     if result.status_code != 200:
