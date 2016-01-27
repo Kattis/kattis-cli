@@ -315,10 +315,13 @@ Overrides default guess (based on suffix of first filename)''', default=None)
     else:
         if language == 'Python':
             try:
-                pyver = int(cfg.get('defaults', 'python-version'))
-                if pyver == 3:
+                pyver = cfg.get('defaults', 'python-version')
+                if not pyver in ['2', '3']:
+                    print('python-version in .kattisrc must be 2 or 3')
+                    sys.exit(1)
+                elif pyver == '3':
                     language = 'Python 3'
-            except:
+            except Exception:
                 pass
 
 
