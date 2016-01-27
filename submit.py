@@ -128,13 +128,13 @@ def submit(submit_url, cookies, problem, language, files, mainclass="", tag=""):
     Returns the requests.Result from the submission
     """
 
-    data = dict(submit='true',
-                submit_ctr=2,
-                language=language,
-                mainclass=mainclass,
-                problem=problem,
-                tag=tag,
-                script='true')
+    data = {'submit': 'true',
+            'submit_ctr': 2,
+            'language': language,
+            'mainclass': mainclass,
+            'problem': problem,
+            'tag': tag,
+            'script': 'true'}
 
     sub_files = []
     for f in files:
@@ -225,13 +225,12 @@ extension "%s"''' % (ext))
         seen.add(arg)
 
     try:
-        cfg = get_config()
         login_reply = login_from_config(cfg)
     except ConfigError as exc:
         print(exc)
         sys.exit(1)
     except requests.exceptions.RequestException as err:
-        print("Login connection failed: " + str(err))
+        print("Login connection failed:", err)
         sys.exit(1)
 
     if not login_reply.status_code == 200:
@@ -252,7 +251,7 @@ extension "%s"''' % (ext))
     try:
         result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
     except requests.exceptions.RequestException as err:
-        print("Submit connection failed: " + str(err))
+        print("Submit connection failed:", err)
         sys.exit(1)
 
     if result.status_code != 200:
