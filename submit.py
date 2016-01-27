@@ -5,6 +5,7 @@ import os
 import sys
 
 import requests
+import requests.exceptions
 
 
 # Python 2/3 compatibility
@@ -229,6 +230,9 @@ extension "%s"''' % (ext))
     except ConfigError as exc:
         print(exc)
         sys.exit(1)
+    except requests.exceptions.RequestException, err:
+        print("Login connection failed: " + err.message)
+        sys.exit(1)
 
     if not login_reply.status_code == 200:
         print('Login failed.')
@@ -245,7 +249,12 @@ extension "%s"''' % (ext))
     if not opts.force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
-    result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
+    try:
+        result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
+    except requests.exceptions.RequestException, err:
+        print("Submit connection failed: " + err.message)
+        sys.exit(1)
+
     if result.status_code != 200:
         print('Submission failed.')
         if result.status_code == 403:
