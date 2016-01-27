@@ -240,7 +240,7 @@ extension "%s"''' % (ext))
         elif login_reply.status_code == 404:
             print("Incorrect login URL (404)")
         else:
-            print("Status code: {0}".format(login_reply.status_code))
+            print("Status code:", login_reply.status_code)
         sys.exit(1)
 
     submit_url = get_url(cfg, 'submissionurl', 'submit')
@@ -261,7 +261,7 @@ extension "%s"''' % (ext))
         elif result.status_code == 404:
             print('Incorrect submit URL (404)')
         else:
-            print("Status code: {0}".format(login_reply.status_code))
+            print("Status code:", login_reply.status_code)
         sys.exit(1)
 
     print(result.content.decode('utf-8').replace('<br />', '\n'))
