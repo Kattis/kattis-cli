@@ -119,7 +119,7 @@ Please download a new .kattisrc file''')
     return login(loginurl, username, password, token)
 
 
-def submit(submit_url, cookies, problem, language, files, mainclass="", tag=""):
+def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
     """Make a submission.
 
     The url_opener argument is an OpenerDirector object to use (as
@@ -170,10 +170,10 @@ Overrides default guess (first part of first filename)''', default=None)
                    help='''Sets language to LANGUAGE.
 Overrides default guess (based on suffix of first filename)''', default=None)
     opt.add_option('-t', '--tag', dest='tag', metavar='TAG',
-                   help=optparse.SUPPRESS_HELP, default="")
+                   help=optparse.SUPPRESS_HELP, default='')
     opt.add_option('-f', '--force', dest='force',
                    help='Force, no confirmation prompt before submission',
-                   action="store_true", default=False)
+                   action='store_true', default=False)
 
     opts, args = opt.parse_args()
 
@@ -230,7 +230,7 @@ extension "%s"''' % (ext))
         print(exc)
         sys.exit(1)
     except requests.exceptions.RequestException as err:
-        print("Login connection failed:", err)
+        print('Login connection failed:', err)
         sys.exit(1)
 
     if not login_reply.status_code == 200:
@@ -238,9 +238,9 @@ extension "%s"''' % (ext))
         if login_reply.status_code == 403:
             print('Incorrect username or password/token (403)')
         elif login_reply.status_code == 404:
-            print("Incorrect login URL (404)")
+            print('Incorrect login URL (404)')
         else:
-            print("Status code:", login_reply.status_code)
+            print('Status code:', login_reply.status_code)
         sys.exit(1)
 
     submit_url = get_url(cfg, 'submissionurl', 'submit')
@@ -251,7 +251,7 @@ extension "%s"''' % (ext))
     try:
         result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
     except requests.exceptions.RequestException as err:
-        print("Submit connection failed:", err)
+        print('Submit connection failed:', err)
         sys.exit(1)
 
     if result.status_code != 200:
@@ -261,7 +261,7 @@ extension "%s"''' % (ext))
         elif result.status_code == 404:
             print('Incorrect submit URL (404)')
         else:
-            print("Status code:", login_reply.status_code)
+            print('Status code:', login_reply.status_code)
         sys.exit(1)
 
     print(result.content.decode('utf-8').replace('<br />', '\n'))
