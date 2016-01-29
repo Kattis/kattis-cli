@@ -3,30 +3,17 @@ from __future__ import print_function
 import optparse
 import os
 import sys
-import itertools
-import mimetypes
-import random
-import string
+
+import requests
+import requests.exceptions
+
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
     import configparser
-    from urllib.parse import urlencode
-    from urllib.error import URLError
-    from urllib.request import Request, build_opener, HTTPCookieProcessor
-
-    def form_body(form):
-        return str(form).encode('utf-8')
 else:
     # Python 2, import modules with Python 3 names
     import ConfigParser as configparser
-    from urllib import urlencode
-    from urllib2 import URLError
-    from urllib2 import Request, build_opener, HTTPCookieProcessor
-
-
-    def form_body(form):
-        return str(form)
 
 # End Python 2/3 compatibility
 
@@ -52,96 +39,6 @@ _LANGUAGE_GUESS = {
     '.rb': 'Ruby'
 }
 _GUESS_MAINCLASS = set(['Java', 'Python'])
-
-
-class MultiPartForm(object):
-    """MultiPartForm based on code from
-    http://blog.doughellmann.com/2009/07/pymotw-urllib2-library-for-opening-urls.html
-
-    This since the default libraries still lack support for posting
-    multipart/form-data (which is required to post files in HTTP).
-    http://bugs.python.org/issue3244
-    """
-
-    def __init__(self):
-        self.form_fields = []
-        self.files = []
-        self.boundary = ''.join(
-            random.SystemRandom().choice(string.ascii_letters)
-            for _ in range(50))
-        return
-
-    def get_content_type(self):
-        return 'multipart/form-data; boundary=%s' % self.boundary
-
-    @staticmethod
-    def escape_field_name(name):
-        """Should escape a field name escaped following RFC 2047 if needed.
-        Skipped for now as we only call it with hard coded constants.
-        """
-        return name
-
-    def add_field(self, name, value):
-        """Add a simple field to the form data."""
-        if value is None:
-            # Assume the field is empty
-            value = ""
-        # ensure value is a string
-        value = str(value)
-        self.form_fields.append((name, value))
-        return
-
-    def add_file(self, fieldname, filename, file_handle, mimetype=None):
-        """Add a file to be uploaded."""
-        body = file_handle.read()
-        if mimetype is None:
-            mimetype = (mimetypes.guess_type(filename)[0] or
-                        'application/octet-stream')
-        self.files.append((fieldname, filename, mimetype, body))
-        return
-
-    def make_request(self, url):
-        body = form_body(self)
-        request = Request(url, data=body)
-        request.add_header('Content-type', self.get_content_type())
-        request.add_header('Content-length', len(body))
-        return request
-
-    def __str__(self):
-        """Return a string representing the form data, including attached
-        files."""
-        # Build a list of lists, each containing "lines" of the
-        # request.  Each part is separated by a boundary string.
-        # Once the list is built, return a string where each
-        # line is separated by '\r\n'.
-        parts = []
-        part_boundary = '--' + self.boundary
-
-        # Add the form fields
-        parts.extend([part_boundary,
-                      ('Content-Disposition: form-data; name="%s"' %
-                       self.escape_field_name(name)),
-                      '',
-                      value]
-                     for name, value in self.form_fields)
-
-        # Add the files to upload
-        parts.extend([part_boundary,
-                      ('Content-Disposition: file; name="%s"; filename="%s"' %
-                       (self.escape_field_name(field_name), filename)),
-                      # FIXME: filename should be escaped using RFC 2231
-                      'Content-Type: %s' % content_type,
-                      '',
-                      body]
-                     for field_name, filename, content_type, body in self.files
-                     )
-
-        # Flatten the list and add closing boundary marker,
-        # then return CR+LF separated data
-        flattened = list(itertools.chain(*parts))
-        flattened.append('--' + self.boundary + '--')
-        flattened.append('')
-        return '\r\n'.join(flattened)
 
 
 class ConfigError(Exception):
@@ -185,8 +82,7 @@ def login(login_url, username, password=None, token=None):
 
     At least one of password or token needs to be provided.
 
-    Returns a urllib OpenerDirector object that can be used to access
-    URLs while logged in.
+    Returns a requests.Response where the cookies are needed to be able to submit
     """
     login_args = {'user': username, 'script': 'true'}
     if password:
@@ -194,16 +90,13 @@ def login(login_url, username, password=None, token=None):
     if token:
         login_args['token'] = token
 
-    opener = build_opener(HTTPCookieProcessor())
-    opener.open(login_url, urlencode(login_args).encode('ascii'))
-    return opener
+    return requests.post(login_url, data=login_args)
 
 
 def login_from_config(cfg):
     """Log in to Kattis using the access information in a kattisrc file
 
-    Returns a urllib OpenerDirector object that can be used to access
-    URLs while logged in.
+    Returns a requests.Response where the cookies are needed to be able to submit
     """
     username = cfg.get('user', 'username')
     password = token = None
@@ -226,36 +119,29 @@ Please download a new .kattisrc file''')
     return login(loginurl, username, password, token)
 
 
-def submit(url_opener, submit_url, problem, language, files,
-           mainclass=None, tag=None):
+def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
     """Make a submission.
 
     The url_opener argument is an OpenerDirector object to use (as
     returned by the login() function)
+
+    Returns the requests.Result from the submission
     """
-    if mainclass is None:
-        mainclass = ""
-    if tag is None:
-        tag = ""
 
-    form = MultiPartForm()
-    form.add_field('submit', 'true')
-    form.add_field('submit_ctr', '2')
-    form.add_field('language', language)
-    form.add_field('mainclass', mainclass)
-    form.add_field('problem', problem)
-    form.add_field('tag', tag)
-    form.add_field('script', 'true')
+    data = {'submit': 'true',
+            'submit_ctr': 2,
+            'language': language,
+            'mainclass': mainclass,
+            'problem': problem,
+            'tag': tag,
+            'script': 'true'}
 
-    if len(files) > 0:
-        for filename in files:
-            form.add_file('sub_file[]', os.path.basename(filename),
-                          open(filename))
+    sub_files = []
+    for f in files:
+        with open(f) as sub_file:
+            sub_files.append(('sub_file[]', (os.path.basename(f), sub_file.read(), 'application/octet-stream')))
 
-    request = form.make_request(submit_url)
-
-    return url_opener.open(request).read().decode('utf-8').replace("<br />",
-                                                                   "\n")
+    return requests.post(submit_url, data=data, files=sub_files, cookies=cookies)
 
 
 def confirm_or_die(problem, language, files, mainclass, tag):
@@ -284,10 +170,10 @@ Overrides default guess (first part of first filename)''', default=None)
                    help='''Sets language to LANGUAGE.
 Overrides default guess (based on suffix of first filename)''', default=None)
     opt.add_option('-t', '--tag', dest='tag', metavar='TAG',
-                   help=optparse.SUPPRESS_HELP, default="")
+                   help=optparse.SUPPRESS_HELP, default='')
     opt.add_option('-f', '--force', dest='force',
                    help='Force, no confirmation prompt before submission',
-                   action="store_true", default=False)
+                   action='store_true', default=False)
 
     opts, args = opt.parse_args()
 
@@ -339,22 +225,22 @@ extension "%s"''' % (ext))
         seen.add(arg)
 
     try:
-        opener = login_from_config(cfg)
+        login_reply = login_from_config(cfg)
     except ConfigError as exc:
         print(exc)
         sys.exit(1)
-    except URLError as exc:
-        if hasattr(exc, 'code'):
-            print('Login failed.')
-            if exc.code == 403:
-                print('Incorrect username or password/token (403)')
-            elif exc.code == 404:
-                print("Incorrect login URL (404)")
-            else:
-                print(exc)
+    except requests.exceptions.RequestException as err:
+        print('Login connection failed:', err)
+        sys.exit(1)
+
+    if not login_reply.status_code == 200:
+        print('Login failed.')
+        if login_reply.status_code == 403:
+            print('Incorrect username or password/token (403)')
+        elif login_reply.status_code == 404:
+            print('Incorrect login URL (404)')
         else:
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
+            print('Status code:', login_reply.status_code)
         sys.exit(1)
 
     submit_url = get_url(cfg, 'submissionurl', 'submit')
@@ -363,22 +249,22 @@ extension "%s"''' % (ext))
         confirm_or_die(problem, language, files, mainclass, tag)
 
     try:
-        result = submit(opener, submit_url, problem, language, files, mainclass, tag)
-    except URLError as exc:
-        if hasattr(exc, 'code'):
-            print('Submission failed.')
-            if exc.code == 403:
-                print('Access denied (403)')
-            elif exc.code == 404:
-                print('Incorrect submit URL (404)')
-            else:
-                print(exc)
-        else:
-            print('Failed to connect to Kattis server.')
-            print('Reason: ', exc.reason)
+        result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
+    except requests.exceptions.RequestException as err:
+        print('Submit connection failed:', err)
         sys.exit(1)
 
-    print(result)
+    if result.status_code != 200:
+        print('Submission failed.')
+        if result.status_code == 403:
+            print('Access denied (403)')
+        elif result.status_code == 404:
+            print('Incorrect submit URL (404)')
+        else:
+            print('Status code:', login_reply.status_code)
+        sys.exit(1)
+
+    print(result.content.decode('utf-8').replace('<br />', '\n'))
 
 
 if __name__ == '__main__':
