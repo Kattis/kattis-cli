@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
+import configparser
 import optparse
 import os
 import sys
@@ -8,15 +9,6 @@ import webbrowser
 import requests
 import requests.exceptions
 
-
-# Python 2/3 compatibility
-if sys.version_info[0] >= 3:
-    import configparser
-else:
-    # Python 2, import modules with Python 3 names
-    import ConfigParser as configparser
-
-# End Python 2/3 compatibility
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _VERSION = 'Version: $Version: $'
