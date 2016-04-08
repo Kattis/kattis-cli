@@ -3,7 +3,8 @@ from __future__ import print_function
 import optparse
 import os
 import sys
-
+import re
+import webbrowser
 import requests
 import requests.exceptions
 
@@ -158,6 +159,18 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         sys.exit(1)
 
 
+def open_submission(submit_response, cfg):
+    submissions_url = get_url(cfg, 'submissionsurl',  'submissions')
+
+    m = re.search(r'Submission ID: (\d+)', submit_response)
+    if m:
+        submission_id = m.group(1)
+        print('Open in browser (y/N)?')
+        if sys.stdin.readline().upper()[:-1] == 'Y':
+            url = '%s/%s' % (submissions_url, submission_id)
+            webbrowser.open(url)
+
+
 def main():
     opt = optparse.OptionParser()
     opt.add_option('-p', '--problem', dest='problem', metavar='PROBLEM',
@@ -264,7 +277,13 @@ extension "%s"''' % (ext))
             print('Status code:', login_reply.status_code)
         sys.exit(1)
 
-    print(result.content.decode('utf-8').replace('<br />', '\n'))
+    plain_result = result.content.decode('utf-8').replace('<br />', '\n')
+    print(plain_result)
+
+    try:
+        open_submission(plain_result, cfg)
+    except configparser.NoOptionError:
+        pass
 
 
 if __name__ == '__main__':
