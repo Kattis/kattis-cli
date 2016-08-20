@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import optparse
+import argparse
 import os
 import sys
 import re
@@ -179,27 +179,25 @@ def open_submission(submit_response, cfg):
 
 
 def main():
-    opt = optparse.OptionParser()
-    opt.add_option('-p', '--problem', dest='problem', metavar='PROBLEM',
-                   help=''''Submit to problem PROBLEM.
-Overrides default guess (first part of first filename)''', default=None)
-    opt.add_option('-m', '--mainclass', dest='mainclass', metavar='CLASS',
-                   help='''Sets mainclass to CLASS.
-Overrides default guess (first part of first filename)''', default=None)
-    opt.add_option('-l', '--language', dest='language', metavar='LANGUAGE',
-                   help='''Sets language to LANGUAGE.
-Overrides default guess (based on suffix of first filename)''', default=None)
-    opt.add_option('-t', '--tag', dest='tag', metavar='TAG',
-                   help=optparse.SUPPRESS_HELP, default='')
-    opt.add_option('-f', '--force', dest='force',
+    parser = argparse.ArgumentParser(description='Submit a solution to Kattis')
+    parser.add_argument('-p', '--problem',
+                   help=''''Which problem to submit to.
+Overrides default guess (first part of first filename)''')
+    parser.add_argument('-m', '--mainclass',
+                   help='''Sets mainclass.
+Overrides default guess (first part of first filename)''')
+    parser.add_argument('-l', '--language',
+                   help='''Sets language.
+Overrides default guess (based on suffix of first filename)''')
+    parser.add_argument('-t', '--tag',
+                   help=argparse.SUPPRESS)
+    parser.add_argument('-f', '--force',
                    help='Force, no confirmation prompt before submission',
-                   action='store_true', default=False)
+                   action='store_true')
+    parser.add_argument('files', nargs='+')
 
-    opts, args = opt.parse_args()
-
-    if len(args) == 0:
-        opt.print_help()
-        sys.exit(1)
+    args = parser.parse_args()
+    files = args.files
 
     try:
         cfg = get_config()
@@ -207,17 +205,17 @@ Overrides default guess (based on suffix of first filename)''', default=None)
         print(exc)
         sys.exit(1)
 
-    problem, ext = os.path.splitext(os.path.basename(args[0]))
+    problem, ext = os.path.splitext(os.path.basename(args.files[0]))
     language = _LANGUAGE_GUESS.get(ext, None)
     mainclass = problem if language in _GUESS_MAINCLASS else None
-    tag = opts.tag
+    tag = args.tag
 
-    if opts.problem:
-        problem = opts.problem
-    if opts.mainclass is not None:
-        mainclass = opts.mainclass
-    if opts.language:
-        language = opts.language
+    if args.problem:
+        problem = args.problem
+    if args.mainclass is not None:
+        mainclass = args.mainclass
+    if args.language:
+        language = args.language
     else:
         if language == 'Python':
             try:
@@ -236,12 +234,7 @@ No language specified, and I failed to guess language from filename
 extension "%s"''' % (ext,))
         sys.exit(1)
 
-    seen = set()
-    files = []
-    for arg in args:
-        if arg not in seen:
-            files.append(arg)
-        seen.add(arg)
+    files = list(set(args.files))
 
     try:
         login_reply = login_from_config(cfg)
@@ -264,7 +257,7 @@ extension "%s"''' % (ext,))
 
     submit_url = get_url(cfg, 'submissionurl', 'submit')
 
-    if not opts.force:
+    if not args.force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
     try:
