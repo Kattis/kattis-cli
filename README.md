@@ -13,11 +13,11 @@ Let's assume you're solving the problem [Hello World!](https://open.kattis.com/p
 
 # More advanced options
 
-The submit client can handle multiple files in a submission. For such submissions, the filename and suffix of the first file listed on the command line is the basis of the guesses. It is ok to list a file multiple times, e.g. `submit.py Hello.java *.java` will work as intended.
+The submit client can handle multiple files in a submission. For such submissions, the filename and suffix of the first file listed on the command line is the basis of the guesses. It is ok to list a file multiple times, e.g., `submit.py Hello.java *.java` will work as intended.
 
-In case the client guesses wrong, you can correct it by specifying a command line option. Running submit.py -h will list all options. The options are:
+In case the client guesses wrong, you can correct it by specifying a command line option. Running `submit.py -h` will list all options. The options are:
 
-* -p <problem_id> - overrides problem guess
-* -m <mainclass> - overrides mainclass guess
-* -l <language> - overrides language guess
-* -f - forces submission (i.e. no prompt)
+* `-p <problem_id>`: overrides problem guess
+* `-m <mainclass>`: overrides mainclass guess
+* `-l <language>`: overrides language guess
+* `-f`: forces submission (i.e., no prompt)
