@@ -212,21 +212,23 @@ Overrides default guess (based on suffix of first filename)''')
 
     if args.problem:
         problem = args.problem
+
     if args.mainclass is not None:
         mainclass = args.mainclass
+
     if args.language:
         language = args.language
-    else:
-        if language == 'Python':
-            try:
-                pyver = cfg.get('defaults', 'python-version')
-                if pyver not in ['2', '3']:
-                    print('python-version in .kattisrc must be 2 or 3')
-                    sys.exit(1)
-                elif pyver == '3':
-                    language = 'Python 3'
-            except Exception:
-                pass
+    elif language == 'Python':
+        python_version = str(sys.version_info[0])
+        try:
+            python_version = cfg.get('defaults', 'python-version')
+        except configparser.Error:
+            pass
+
+        if python_version not in ['2', '3']:
+            print('python-version in .kattisrc must be 2 or 3')
+            sys.exit(1)
+        language = 'Python ' + python_version
 
     if language is None:
         print('''\
