@@ -43,6 +43,9 @@ _LANGUAGE_GUESS = {
 _GUESS_MAINCLASS = {'Java', 'Python'}
 
 
+_HEADERS = {'User-Agent': 'kattis-cli-submit'}
+
+
 class ConfigError(Exception):
     pass
 
@@ -92,7 +95,7 @@ def login(login_url, username, password=None, token=None):
     if token:
         login_args['token'] = token
 
-    return requests.post(login_url, data=login_args)
+    return requests.post(login_url, data=login_args, headers=_HEADERS)
 
 
 def login_from_config(cfg):
@@ -146,7 +149,7 @@ def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
                                sub_file.read(),
                                'application/octet-stream')))
 
-    return requests.post(submit_url, data=data, files=sub_files, cookies=cookies)
+    return requests.post(submit_url, data=data, files=sub_files, cookies=cookies, headers=_HEADERS)
 
 
 def confirm_or_die(problem, language, files, mainclass, tag):
