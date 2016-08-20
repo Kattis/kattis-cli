@@ -1,22 +1,16 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import optparse
 import os
 import sys
 import re
 import webbrowser
+
 import requests
 import requests.exceptions
 
+import configparser
 
-# Python 2/3 compatibility
-if sys.version_info[0] >= 3:
-    import configparser
-else:
-    # Python 2, import modules with Python 3 names
-    import ConfigParser as configparser
-
-# End Python 2/3 compatibility
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _VERSION = 'Version: $Version: $'
@@ -39,7 +33,10 @@ _LANGUAGE_GUESS = {
     '.php': 'PHP',
     '.rb': 'Ruby'
 }
-_GUESS_MAINCLASS = set(['Java', 'Python'])
+_GUESS_MAINCLASS = {'Java', 'Python'}
+
+
+_HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
 
 class ConfigError(Exception):
@@ -83,7 +80,7 @@ def login(login_url, username, password=None, token=None):
 
     At least one of password or token needs to be provided.
 
-    Returns a requests.Response where the cookies are needed to be able to submit
+    Returns a requests.Response with cookies needed to be able to submit
     """
     login_args = {'user': username, 'script': 'true'}
     if password:
@@ -91,13 +88,13 @@ def login(login_url, username, password=None, token=None):
     if token:
         login_args['token'] = token
 
-    return requests.post(login_url, data=login_args)
+    return requests.post(login_url, data=login_args, headers=_HEADERS)
 
 
 def login_from_config(cfg):
     """Log in to Kattis using the access information in a kattisrc file
 
-    Returns a requests.Response where the cookies are needed to be able to submit
+    Returns a requests.Response with cookies needed to be able to submit
     """
     username = cfg.get('user', 'username')
     password = token = None
@@ -140,9 +137,12 @@ def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
     sub_files = []
     for f in files:
         with open(f) as sub_file:
-            sub_files.append(('sub_file[]', (os.path.basename(f), sub_file.read(), 'application/octet-stream')))
+            sub_files.append(('sub_file[]',
+                              (os.path.basename(f),
+                               sub_file.read(),
+                               'application/octet-stream')))
 
-    return requests.post(submit_url, data=data, files=sub_files, cookies=cookies)
+    return requests.post(submit_url, data=data, files=sub_files, cookies=cookies, headers=_HEADERS)
 
 
 def confirm_or_die(problem, language, files, mainclass, tag):
@@ -160,7 +160,7 @@ def confirm_or_die(problem, language, files, mainclass, tag):
 
 
 def open_submission(submit_response, cfg):
-    submissions_url = get_url(cfg, 'submissionsurl',  'submissions')
+    submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
 
     m = re.search(r'Submission ID: (\d+)', submit_response)
     if m:
@@ -215,7 +215,7 @@ Overrides default guess (based on suffix of first filename)''', default=None)
         if language == 'Python':
             try:
                 pyver = cfg.get('defaults', 'python-version')
-                if not pyver in ['2', '3']:
+                if pyver not in ['2', '3']:
                     print('python-version in .kattisrc must be 2 or 3')
                     sys.exit(1)
                 elif pyver == '3':
@@ -223,11 +223,10 @@ Overrides default guess (based on suffix of first filename)''', default=None)
             except Exception:
                 pass
 
-
     if language is None:
         print('''\
 No language specified, and I failed to guess language from filename
-extension "%s"''' % (ext))
+extension "%s"''' % (ext,))
         sys.exit(1)
 
     seen = set()
@@ -262,7 +261,13 @@ extension "%s"''' % (ext))
         confirm_or_die(problem, language, files, mainclass, tag)
 
     try:
-        result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag)
+        result = submit(submit_url,
+                        login_reply.cookies,
+                        problem,
+                        language,
+                        files,
+                        mainclass,
+                        tag)
     except requests.exceptions.RequestException as err:
         print('Submit connection failed:', err)
         sys.exit(1)
