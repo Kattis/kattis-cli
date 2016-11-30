@@ -68,8 +68,8 @@ def get_config():
                      os.path.join(os.path.dirname(sys.argv[0]), '.kattisrc')]):
         raise ConfigError('''\
 I failed to read in a config file from your home directory or from the
-same directory as this script. Please go to your Kattis installation
-to download a .kattisrc file.
+same directory as this script. To download a .kattisrc file please visit 
+https://<kattis>/download/kattisrc
 
 The file should look something like this:
 [user]
