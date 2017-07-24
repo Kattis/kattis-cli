@@ -210,6 +210,12 @@ Overrides default guess (based on suffix of first filename)''')
     mainclass = problem if language in _GUESS_MAINCLASS else None
     tag = args.tag
 
+    # A problem ID can be an invalid mainclass (eg. 2048)
+    # A mainclass is not needed for python if there is only 1 file
+    # so it is better to default to no mainclass in that case
+    if language == 'Python' and len(files) == 1:
+        mainclass = None
+
     if args.problem:
         problem = args.problem
 
