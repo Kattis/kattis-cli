@@ -178,6 +178,27 @@ def open_submission(submit_response, cfg):
             webbrowser.open(url)
 
 
+def guess_python_version(files):
+    python2 = re.compile(r'^\s*\bprint\b *[^ \(\),\]]|\braw_input\b')
+
+    for f in files:
+        first = True
+        with open(f, 'r') as f:
+            for l in f:
+                if first and l.startswith('#!'):
+                    if l.find('python2') != -1:
+                        return '2'
+                    if l.find('python3') != -1:
+                        return '3'
+
+                if python2.search(l):
+                    return '2'
+
+                first = False
+
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description='Submit a solution to Kattis')
     parser.add_argument('-p', '--problem',
@@ -219,11 +240,13 @@ Overrides default guess (based on suffix of first filename)''')
     if args.language:
         language = args.language
     elif language == 'Python':
-        python_version = str(sys.version_info[0])
-        try:
-            python_version = cfg.get('defaults', 'python-version')
-        except configparser.Error:
-            pass
+        python_version = guess_python_version(files)
+        if not python_version:
+            python_version = str(sys.version_info[0])
+            try:
+                python_version = cfg.get('defaults', 'python-version')
+            except configparser.Error:
+                pass
 
         if python_version not in ['2', '3']:
             print('python-version in .kattisrc must be 2 or 3')
