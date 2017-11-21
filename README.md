@@ -11,6 +11,8 @@ The easiest way to use the client is if you have named your source code to *prob
 
 Let's assume you're solving the problem [Hello World!](https://open.kattis.com/problems/hello) (with problem id `hello`) and that your java solution is in the file `Hello.java`. Then you can simply run `submit.py Hello.java`, and the client will make the correct guesses. You will always be prompted before a submission is sent.
 
+**Note:** If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `submit.py` it's because the module 'requests' isn't installed. To install the module, check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer. 
+
 # More advanced options
 
 The submit client can handle multiple files in a submission. For such submissions, the filename and suffix of the first file listed on the command line is the basis of the guesses. It is ok to list a file multiple times, e.g., `submit.py Hello.java *.java` will work as intended.
