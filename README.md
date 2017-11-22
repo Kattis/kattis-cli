@@ -1,6 +1,18 @@
 # Kattis CLI
 Kattis online judge command line tool written in Python.  Runs both in Python 2 and in Python 3.
 
+# Install the client
+
+Run `git clone https://github.com/Kattis/kattis-cli` to clone the repository.
+To run the client, `cd` into the `kattis-cli` directory and run `python submit.py`.
+
+The repository also contains files for running the submission client as a command from anywhere on your file system. Checkout the instructions for your operating system to see how to proceed.
+
+## Windows
+To run the client as a global command, you need to add the `kattis-cli` to your `%PATH%` variable.
+To do that, run `setx PATH "%PATH%;C:\Users\user\Desktop\kattis-cli"` where `C:\Users\user\Desktop\kattis-cli` is the path to your cloned repository.
+You can now run the command `kattis` from anywhere!
+
 # Configuration file
 
 Before running the submission client, you need to [download a configuration file](https://open.kattis.com/download/kattisrc). This file includes a secret personal token that allows you to log in. It should be placed in your home directory, or in the same directory as `submit.py`, and be called `.kattisrc`.
@@ -11,7 +23,7 @@ The easiest way to use the client is if you have named your source code to *prob
 
 Let's assume you're solving the problem [Hello World!](https://open.kattis.com/problems/hello) (with problem id `hello`) and that your java solution is in the file `Hello.java`. Then you can simply run `submit.py Hello.java`, and the client will make the correct guesses. You will always be prompted before a submission is sent.
 
-**Note:** If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `submit.py` it's because the module 'requests' isn't installed. To install the module, check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer. 
+**Note:** If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `submit.py` it's because the module 'requests' isn't installed. To install the module, check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer.
 
 # More advanced options
 
