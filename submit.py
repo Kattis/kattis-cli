@@ -2,6 +2,7 @@
 from __future__ import print_function
 import argparse
 import os
+import re
 import sys
 import re
 import webbrowser
@@ -38,14 +39,12 @@ _LANGUAGE_GUESS = {
     '.php': 'PHP',
     '.pas': 'Pascal',
     '.pl': 'Prolog',
-    '.py': 'Python',
     '.rb': 'Ruby',
     '.rs': 'Rust',
     '.sc': 'Scala',
     '.scala': 'Scala',
 }
-_GUESS_MAINCLASS = {'Java', 'Python', 'Scala'}
-
+_GUESS_MAINCLASS = {'Java', 'Python 2', 'Python 3', 'Scala'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
@@ -85,6 +84,43 @@ loginurl: https://<kattis>/login
 submissionurl: https://<kattis>/submit''')
     return cfg
 
+def is_python2(files):
+    python2 = re.compile(r'^\s*\bprint\b *[^ \(\),\]]|\braw_input\b')
+    for filename in files:
+        try:
+            with open(filename) as f:
+                for index, line in enumerate(f):
+                    if index == 0 and line.startswith('#!'):
+                        if 'python2' in line:
+                            return True
+                        if 'python3' in line:
+                            return False
+                    if python2.search(line.split('#')[0]):
+                        return True
+        except FileNotFoundError:
+            return False
+    return False
+
+def guess_language(ext, files):
+    if ext == ".C":
+        return "C++"
+    ext = ext.lower()
+    if ext == ".h":
+        if some(os.path.basename(f).endswith(".c") for f in files):
+            return "C"
+        else:
+            return "C++"
+    if ext == ".py":
+        if is_python2(files):
+            return "Python 2"
+        else:
+            return "Python 3"
+    return _LANGUAGE_GUESS.get(ext, None)
+
+def guess_mainclass(language, problem):
+    if language in _GUESS_MAINCLASS:
+        return problem
+    return None
 
 def login(login_url, username, password=None, token=None):
     """Log in to Kattis.
@@ -209,9 +245,9 @@ Overrides default guess (based on suffix of first filename)''')
         print(exc)
         sys.exit(1)
 
-    problem, ext = os.path.splitext(os.path.basename(args.files[0]))
-    language = _LANGUAGE_GUESS.get(ext, None)
-    mainclass = problem if language in _GUESS_MAINCLASS else None
+    problem, ext = os.path.splitext(os.path.basename(files[0]))
+    language = guess_language(ext, files)
+    mainclass = guess_mainclass(language, problem)
     tag = args.tag
 
     problem = problem.lower()
@@ -224,17 +260,6 @@ Overrides default guess (based on suffix of first filename)''')
 
     if args.language:
         language = args.language
-    elif language == 'Python':
-        python_version = str(sys.version_info[0])
-        try:
-            python_version = cfg.get('defaults', 'python-version')
-        except configparser.Error:
-            pass
-
-        if python_version not in ['2', '3']:
-            print('python-version in .kattisrc must be 2 or 3')
-            sys.exit(1)
-        language = 'Python ' + python_version
 
     if language is None:
         print('''\
