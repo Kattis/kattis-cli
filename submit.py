@@ -38,9 +38,10 @@ _LANGUAGE_GUESS = {
     '.pl': 'Prolog',
     '.js': 'JavaScript',
     '.php': 'PHP',
-    '.rb': 'Ruby'
+    '.rb': 'Ruby',
+    '.scala': 'Scala'
 }
-_GUESS_MAINCLASS = {'Java', 'Python'}
+_GUESS_MAINCLASS = {'Java', 'Python', 'Scala'}
 
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
@@ -209,6 +210,8 @@ Overrides default guess (based on suffix of first filename)''')
     language = _LANGUAGE_GUESS.get(ext, None)
     mainclass = problem if language in _GUESS_MAINCLASS else None
     tag = args.tag
+
+    problem = problem.lower()
 
     if args.problem:
         problem = args.problem
