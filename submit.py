@@ -20,26 +20,29 @@ else:
 # End Python 2/3 compatibility
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
-_VERSION = 'Version: $Version: $'
 _LANGUAGE_GUESS = {
-    '.java': 'Java',
     '.c': 'C',
     '.cpp': 'C++',
     '.h': 'C++',
     '.cc': 'C++',
     '.cxx': 'C++',
     '.c++': 'C++',
-    '.py': 'Python',
     '.cs': 'C#',
     '.c#': 'C#',
     '.go': 'Go',
-    '.m': 'Objective-C',
     '.hs': 'Haskell',
-    '.pl': 'Prolog',
+    '.java': 'Java',
     '.js': 'JavaScript',
+    '.kt': 'Kotlin',
+    '.m': 'Objective-C',
     '.php': 'PHP',
+    '.pas': 'Pascal',
+    '.pl': 'Prolog',
+    '.py': 'Python',
     '.rb': 'Ruby',
-    '.scala': 'Scala'
+    '.rs': 'Rust',
+    '.sc': 'Scala',
+    '.scala': 'Scala',
 }
 _GUESS_MAINCLASS = {'Java', 'Python', 'Scala'}
 
