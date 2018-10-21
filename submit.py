@@ -81,8 +81,10 @@ username: yourusername
 token: *********
 
 [kattis]
+hostname: <kattis>
 loginurl: https://<kattis>/login
-submissionurl: https://<kattis>/submit''')
+submissionurl: https://<kattis>/submit
+submissionsurl: https://<kattis>/submissions''')
     return cfg
 
 def is_python2(files):
