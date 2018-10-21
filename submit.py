@@ -44,7 +44,8 @@ _LANGUAGE_GUESS = {
     '.sc': 'Scala',
     '.scala': 'Scala',
 }
-_GUESS_MAINCLASS = {'Java', 'Python 2', 'Python 3', 'Scala'}
+_GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
+_GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
@@ -97,7 +98,7 @@ def is_python2(files):
                             return False
                     if python2.search(line.split('#')[0]):
                         return True
-        except FileNotFoundError:
+        except IOError:
             return False
     return False
 
@@ -106,7 +107,7 @@ def guess_language(ext, files):
         return "C++"
     ext = ext.lower()
     if ext == ".h":
-        if some(os.path.basename(f).endswith(".c") for f in files):
+        if some(f.endswith(".c") for f in files):
             return "C"
         else:
             return "C++"
@@ -117,9 +118,31 @@ def guess_language(ext, files):
             return "Python 3"
     return _LANGUAGE_GUESS.get(ext, None)
 
-def guess_mainclass(language, problem):
+def guess_mainfile(language, files):
+    for filename in files:
+        if os.path.splitext(os.path.basename(filename))[0] in ['main', 'Main']:
+            return filename
+    for filename in files:
+        try:
+            with open(filename) as f:
+                conts = f.read()
+                if language in ['Java', 'Rust', 'Scala', 'Kotlin'] and re.search(r' main\s*\(', conts):
+                    return filename
+                if language == 'Pascal' and re.match(r'^\s*[Pp]rogram\b', conts):
+                    return filename
+        except IOError:
+            pass
+    return files[0]
+
+def guess_mainclass(language, files):
+    if language in _GUESS_MAINFILE and len(files) > 1:
+        return os.path.basename(guess_mainfile(language, files))
     if language in _GUESS_MAINCLASS:
-        return problem
+        mainfile = os.path.basename(guess_mainfile(language, files))
+        name = os.path.splitext(mainfile)[0]
+        if language == 'Kotlin':
+            return name[0].upper() + name[1:] + 'Kt'
+        return name
     return None
 
 def login(login_url, username, password=None, token=None):
@@ -197,7 +220,10 @@ def confirm_or_die(problem, language, files, mainclass, tag):
     print('Language:', language)
     print('Files:', ', '.join(files))
     if mainclass:
-        print('Mainclass:', mainclass)
+        if language in _GUESS_MAINFILE:
+            print('Main file:', mainclass)
+        else:
+            print('Mainclass:', mainclass)
     if tag:
         print('Tag:', tag)
     print('Submit (y/N)?')
@@ -247,7 +273,7 @@ Overrides default guess (based on suffix of first filename)''')
 
     problem, ext = os.path.splitext(os.path.basename(files[0]))
     language = guess_language(ext, files)
-    mainclass = guess_mainclass(language, problem)
+    mainclass = guess_mainclass(language, files)
     tag = args.tag
 
     problem = problem.lower()
@@ -267,7 +293,7 @@ No language specified, and I failed to guess language from filename
 extension "%s"''' % (ext,))
         sys.exit(1)
 
-    files = list(set(args.files))
+    files = sorted(list(set(args.files)))
 
     try:
         login_reply = login_from_config(cfg)
