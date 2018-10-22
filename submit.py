@@ -109,7 +109,7 @@ def guess_language(ext, files):
         return "C++"
     ext = ext.lower()
     if ext == ".h":
-        if some(f.endswith(".c") for f in files):
+        if any(f.endswith(".c") for f in files):
             return "C"
         else:
             return "C++"
