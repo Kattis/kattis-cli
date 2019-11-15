@@ -339,7 +339,7 @@ extension "%s"''' % (ext,))
         elif result.status_code == 404:
             print('Incorrect submit URL (404)')
         else:
-            print('Status code:', login_reply.status_code)
+            print('Status code:', result.status_code)
         sys.exit(1)
 
     plain_result = result.content.decode('utf-8').replace('<br />', '\n')
