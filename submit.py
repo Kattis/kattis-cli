@@ -9,7 +9,6 @@ import webbrowser
 import requests
 import requests.exceptions
 
-
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
     import configparser
@@ -92,6 +91,7 @@ submissionurl: https://<kattis>/submit
 submissionsurl: https://<kattis>/submissions''')
     return cfg
 
+
 def is_python2(files):
     python2 = re.compile(r'^\s*\bprint\b *[^ \(\),\]]|\braw_input\b')
     for filename in files:
@@ -109,6 +109,7 @@ def is_python2(files):
             return False
     return False
 
+
 def guess_language(ext, files):
     if ext == ".C":
         return "C++"
@@ -124,6 +125,7 @@ def guess_language(ext, files):
         else:
             return "Python 3"
     return _LANGUAGE_GUESS.get(ext, None)
+
 
 def guess_mainfile(language, files):
     for filename in files:
@@ -141,6 +143,7 @@ def guess_mainfile(language, files):
             pass
     return files[0]
 
+
 def guess_mainclass(language, files):
     if language in _GUESS_MAINFILE and len(files) > 1:
         return os.path.basename(guess_mainfile(language, files))
@@ -151,6 +154,7 @@ def guess_mainclass(language, files):
             return name[0].upper() + name[1:] + 'Kt'
         return name
     return None
+
 
 def login(login_url, username, password=None, token=None):
     """Log in to Kattis.
@@ -254,19 +258,19 @@ def open_submission(submit_response, cfg):
 def main():
     parser = argparse.ArgumentParser(description='Submit a solution to Kattis')
     parser.add_argument('-p', '--problem',
-                   help=''''Which problem to submit to.
+                        help=''''Which problem to submit to.
 Overrides default guess (first part of first filename)''')
     parser.add_argument('-m', '--mainclass',
-                   help='''Sets mainclass.
+                        help='''Sets mainclass.
 Overrides default guess (first part of first filename)''')
     parser.add_argument('-l', '--language',
-                   help='''Sets language.
+                        help='''Sets language.
 Overrides default guess (based on suffix of first filename)''')
     parser.add_argument('-t', '--tag',
-                   help=argparse.SUPPRESS)
+                        help=argparse.SUPPRESS)
     parser.add_argument('-f', '--force',
-                   help='Force, no confirmation prompt before submission',
-                   action='store_true')
+                        help='Force, no confirmation prompt before submission',
+                        action='store_true')
     parser.add_argument('files', nargs='+')
 
     args = parser.parse_args()
