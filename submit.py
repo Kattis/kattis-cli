@@ -4,7 +4,9 @@ import argparse
 import os
 import re
 import sys
+import time
 import webbrowser
+import xml.etree.ElementTree as ET
 
 import requests
 import requests.exceptions
@@ -52,6 +54,22 @@ _GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
 _GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
+
+_RUNNING_STATUS = 5
+_COMPILER_ERROR = 8
+_ACCEPTED_STATUS = 16
+_STATUS_MAP = {
+    0: 'New',
+    3: 'Compiling',
+    _RUNNING_STATUS: 'Running',
+    _COMPILER_ERROR: 'Compiler Error',
+    9: 'Runtime Error',
+    10: 'Memory Limit Exceeded',
+    11: 'Output Limit Exceeded',
+    12: 'Time Limit Exceeded',
+    14: 'Wrong Answer',
+    _ACCEPTED_STATUS: 'Accepted',
+}
 
 
 class ConfigError(Exception):
@@ -243,16 +261,62 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         sys.exit(1)
 
 
-def open_submission(submit_response, cfg):
-    submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
-
+def get_submission_url(submit_response, cfg):
     m = re.search(r'Submission ID: (\d+)', submit_response)
     if m:
+        submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
         submission_id = m.group(1)
-        print('Open in browser (y/N)?')
-        if sys.stdin.readline().upper()[:-1] == 'Y':
-            url = '%s/%s' % (submissions_url, submission_id)
-            webbrowser.open(url)
+        return '%s/%s' % (submissions_url, submission_id)
+
+
+def open_submission(submission_url):
+    print('Open in browser (y/N)?')
+    if sys.stdin.readline().upper()[:-1] == 'Y':
+        webbrowser.open(submission_url)
+
+
+def get_submission_status(submission_url, cookies):
+    reply = requests.get(submission_url + '?json', cookies=cookies, headers=_HEADERS)
+    return reply.json()
+
+
+def show_judgement(submission_url, cfg):
+    login_reply = login_from_config(cfg)
+    while True:
+        status = get_submission_status(submission_url, login_reply.cookies)
+        status_id = status['status_id']
+        testcases_done = status['testcase_index']
+        testcases_total = status['row_html'].count('<span') - 1
+
+        status_text = _STATUS_MAP.get(status_id, 'Unknown status %s' % status_id)
+
+        print('\r%s:  ' % (status_text), end='')
+
+        if status_id == _COMPILER_ERROR:
+            try:
+                root = ET.fromstring(status['feedback_html'])
+                error = root.find('pre').text
+                print()
+                print(error, end='')
+            except:
+                pass
+        elif testcases_total == 0:
+            print('...', end='')
+        else:
+            s = '.' * testcases_done
+            if status_id not in [_RUNNING_STATUS, _ACCEPTED_STATUS]:
+                s = s[:-1] + 'x'
+
+            print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
+
+        sys.stdout.flush()
+
+        if status_id > _RUNNING_STATUS:
+            # Done
+            print()
+            break
+
+        time.sleep(1)
 
 
 def main():
@@ -355,10 +419,15 @@ extension "%s"''' % (ext,))
     plain_result = result.content.decode('utf-8').replace('<br />', '\n')
     print(plain_result)
 
+    submission_url = None
     try:
-        open_submission(plain_result, cfg)
+        submission_url = get_submission_url(plain_result, cfg)
     except configparser.NoOptionError:
         pass
+
+    if submission_url:
+        open_submission(submission_url)
+        show_judgement(submission_url, cfg)
 
 
 if __name__ == '__main__':
