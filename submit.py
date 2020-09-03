@@ -313,9 +313,13 @@ def show_judgement(submission_url, cfg):
             if testcases_total == 0:
                 print('???', end='')
             else:
-                s = '.' * testcases_done
-                if status_id not in [_RUNNING_STATUS, _ACCEPTED_STATUS]:
-                    s = s[:-1] + 'x'
+                s = '.' * (testcases_done - 1)
+                if status_id == _RUNNING_STATUS:
+                    s += '?'
+                elif status_id == _ACCEPTED_STATUS:
+                    s += '.'
+                else:
+                    s += 'x'
 
                 print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
 
