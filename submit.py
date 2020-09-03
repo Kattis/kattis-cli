@@ -61,7 +61,7 @@ _STATUS_MAP = {
     0: 'New',
     3: 'Compiling',
     _RUNNING_STATUS: 'Running',
-    _COMPILER_ERROR: 'Compiler Error',
+    _COMPILER_ERROR: 'Compile Error',
     9: 'Runtime Error',
     10: 'Memory Limit Exceeded',
     11: 'Output Limit Exceeded',
