@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import time
-import webbrowser
 import xml.etree.ElementTree as ET
 
 import requests
@@ -269,12 +268,6 @@ def get_submission_url(submit_response, cfg):
         return '%s/%s' % (submissions_url, submission_id)
 
 
-def open_submission(submission_url):
-    print('Open in browser (y/N)?')
-    if sys.stdin.readline().upper()[:-1] == 'Y':
-        webbrowser.open(submission_url)
-
-
 def get_submission_status(submission_url, cookies):
     reply = requests.get(submission_url + '?json', cookies=cookies, headers=_HEADERS)
     return reply.json()
@@ -426,7 +419,7 @@ extension "%s"''' % (ext,))
         pass
 
     if submission_url:
-        open_submission(submission_url)
+        print(submission_url)
         show_judgement(submission_url, cfg)
 
 
