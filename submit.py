@@ -274,6 +274,7 @@ def get_submission_status(submission_url, cookies):
 
 
 def show_judgement(submission_url, cfg):
+    print()
     login_reply = login_from_config(cfg)
     while True:
         status = get_submission_status(submission_url, login_reply.cookies)
@@ -283,31 +284,43 @@ def show_judgement(submission_url, cfg):
 
         status_text = _STATUS_MAP.get(status_id, 'Unknown status %s' % status_id)
 
-        print('\r%s:  ' % (status_text), end='')
+
+        if status_id < _RUNNING_STATUS:
+            print('\r%s...' % (status_text), end='')
+        else:
+            print('\rTest cases: ', end='')
 
         if status_id == _COMPILER_ERROR:
+            print('\r%s' % status_text, end='')
             try:
                 root = ET.fromstring(status['feedback_html'])
                 error = root.find('pre').text
-                print()
+                print(':')
                 print(error, end='')
             except:
                 pass
-        elif testcases_total == 0:
-            print('...', end='')
+        elif status_id < _RUNNING_STATUS:
+            print('\r%s...' % (status_text), end='')
         else:
-            s = '.' * testcases_done
-            if status_id not in [_RUNNING_STATUS, _ACCEPTED_STATUS]:
-                s = s[:-1] + 'x'
+            print('\rTest cases: ', end='')
 
-            print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
+            if testcases_total == 0:
+                print('???', end='')
+            else:
+                s = '.' * testcases_done
+                if status_id not in [_RUNNING_STATUS, _ACCEPTED_STATUS]:
+                    s = s[:-1] + 'x'
+
+                print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
 
         sys.stdout.flush()
 
         if status_id > _RUNNING_STATUS:
             # Done
             print()
-            break
+            if status_id != _COMPILER_ERROR:
+                print(status_text)
+            return status_id == _ACCEPTED_STATUS
 
         time.sleep(1)
 
@@ -420,7 +433,8 @@ extension "%s"''' % (ext,))
 
     if submission_url:
         print(submission_url)
-        show_judgement(submission_url, cfg)
+        if not show_judgement(submission_url, cfg):
+            sys.exit(1)
 
 
 if __name__ == '__main__':
