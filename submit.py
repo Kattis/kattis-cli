@@ -273,6 +273,12 @@ def get_submission_status(submission_url, cookies):
     return reply.json()
 
 
+_RED_COLOR = 31
+_GREEN_COLOR = 32
+def color(s, c):
+    return '\x1b[%sm%s\x1b[0m' % (c, s)
+
+
 def show_judgement(submission_url, cfg):
     print()
     login_reply = login_from_config(cfg)
@@ -291,11 +297,11 @@ def show_judgement(submission_url, cfg):
             print('\rTest cases: ', end='')
 
         if status_id == _COMPILER_ERROR:
-            print('\r%s' % status_text, end='')
+            print('\r%s' % color(status_text, _RED_COLOR), end='')
             try:
                 root = ET.fromstring(status['feedback_html'])
                 error = root.find('pre').text
-                print(':')
+                print(color(':', _RED_COLOR))
                 print(error, end='')
             except:
                 pass
@@ -318,9 +324,10 @@ def show_judgement(submission_url, cfg):
         if status_id > _RUNNING_STATUS:
             # Done
             print()
+            success = status_id == _ACCEPTED_STATUS
             if status_id != _COMPILER_ERROR:
-                print(status_text)
-            return status_id == _ACCEPTED_STATUS
+                print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
+            return success
 
         time.sleep(1)
 
