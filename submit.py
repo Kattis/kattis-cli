@@ -55,7 +55,7 @@ _GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
 _RUNNING_STATUS = 5
-_COMPILER_ERROR = 8
+_COMPILE_ERROR_STATUS = 8
 _ACCEPTED_STATUS = 16
 _STATUS_MAP = {
     0: 'New', # <invalid value>
@@ -66,7 +66,7 @@ _STATUS_MAP = {
     _RUNNING_STATUS: 'Running',
     6: 'Judge Error',
     7: 'Submission Error',
-    _COMPILER_ERROR: 'Compile Error',
+    _COMPILE_ERROR_STATUS: 'Compile Error',
     9: 'Run Time Error',
     10: 'Memory Limit Exceeded',
     11: 'Output Limit Exceeded',
@@ -303,7 +303,7 @@ def show_judgement(submission_url, cfg):
         else:
             print('\rTest cases: ', end='')
 
-        if status_id == _COMPILER_ERROR:
+        if status_id == _COMPILE_ERROR_STATUS:
             print('\r%s' % color(status_text, _RED_COLOR), end='')
             try:
                 root = ET.fromstring(status['feedback_html'])
@@ -336,7 +336,7 @@ def show_judgement(submission_url, cfg):
             # Done
             print()
             success = status_id == _ACCEPTED_STATUS
-            if status_id != _COMPILER_ERROR:
+            if status_id != _COMPILE_ERROR_STATUS:
                 print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
             return success
 
