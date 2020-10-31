@@ -58,15 +58,22 @@ _RUNNING_STATUS = 5
 _COMPILER_ERROR = 8
 _ACCEPTED_STATUS = 16
 _STATUS_MAP = {
-    0: 'New',
+    0: 'New', # <invalid value>
+    1: 'New',
+    2: 'Waiting for compile',
     3: 'Compiling',
+    4: 'Waiting for run',
     _RUNNING_STATUS: 'Running',
+    6: 'Judge Error',
+    7: 'Submission Error',
     _COMPILER_ERROR: 'Compile Error',
-    9: 'Runtime Error',
+    9: 'Run Time Error',
     10: 'Memory Limit Exceeded',
     11: 'Output Limit Exceeded',
     12: 'Time Limit Exceeded',
+    13: 'Illegal Function',
     14: 'Wrong Answer',
+    # 15: '<invalid value>',
     _ACCEPTED_STATUS: 'Accepted',
 }
 
