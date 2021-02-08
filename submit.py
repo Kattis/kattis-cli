@@ -340,7 +340,7 @@ def show_judgement(submission_url, cfg):
                 print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
             return success
 
-        time.sleep(1)
+        time.sleep(0.25)
 
 
 def main():
