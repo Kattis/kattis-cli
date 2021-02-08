@@ -5,10 +5,11 @@ import os
 import re
 import sys
 import time
-import xml.etree.ElementTree as ET
 
 import requests
 import requests.exceptions
+
+from lxml.html import fragment_fromstring
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
@@ -306,8 +307,8 @@ def show_judgement(submission_url, cfg):
         if status_id == _COMPILE_ERROR_STATUS:
             print('\r%s' % color(status_text, _RED_COLOR), end='')
             try:
-                root = ET.fromstring(status['feedback_html'])
-                error = root.find('pre').text
+                root = fragment_fromstring(status['feedback_html'], create_parent=True)
+                error = root.find('.//pre').text
                 print(color(':', _RED_COLOR))
                 print(error, end='')
             except:
@@ -336,6 +337,12 @@ def show_judgement(submission_url, cfg):
             # Done
             print()
             success = status_id == _ACCEPTED_STATUS
+            try:
+                root = fragment_fromstring(status['row_html'], create_parent=True)
+                cpu_time = root.find('.//*[@data-type="cpu"]').text
+                status_text += " (" + cpu_time + ")"
+            except:
+                pass
             if status_id != _COMPILE_ERROR_STATUS:
                 print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
             return success
