@@ -294,7 +294,7 @@ def show_judgement(submission_url, cfg):
         status = get_submission_status(submission_url, login_reply.cookies)
         status_id = status['status_id']
         testcases_done = status['testcase_index']
-        testcases_total = status['row_html'].count('<i') - 1
+        testcases_total = status['row_html'].count('<i') - 3
 
         status_text = _STATUS_MAP.get(status_id, 'Unknown status %s' % status_id)
 
