@@ -34,10 +34,10 @@ _LANGUAGE_GUESS = {
     '.cpy': 'COBOL',
     '.fs': 'F#',
     '.go': 'Go',
-    '.h': 'C++',
     '.hs': 'Haskell',
     '.java': 'Java',
-    '.js': 'JavaScript',
+    '.js': 'JavaScript (Node.js)',
+    '.ts': 'TypeScript',
     '.kt': 'Kotlin',
     '.lisp': 'Common Lisp',
     '.cl': 'Common Lisp',
@@ -46,10 +46,19 @@ _LANGUAGE_GUESS = {
     '.pas': 'Pascal',
     '.php': 'PHP',
     '.pl': 'Prolog',
+    '.py': 'Python 3',
+    '.pyc': 'Python 3',
     '.rb': 'Ruby',
     '.rs': 'Rust',
     '.scala': 'Scala',
+    '.f90': 'Fortran',
+    '.f': 'Fortran',
+    '.for': 'Fortran',
+    '.sh': 'Bash',
+    '.apl': 'APL',
+    '.ss': 'Gerbil',
 }
+
 _GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
 _GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
 
