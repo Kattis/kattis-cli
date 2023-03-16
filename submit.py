@@ -4,10 +4,12 @@ import argparse
 import os
 import re
 import sys
-import webbrowser
+import time
 
 import requests
 import requests.exceptions
+
+from lxml.html import fragment_fromstring
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
@@ -52,6 +54,29 @@ _GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
 _GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
+
+_RUNNING_STATUS = 5
+_COMPILE_ERROR_STATUS = 8
+_ACCEPTED_STATUS = 16
+_STATUS_MAP = {
+    0: 'New', # <invalid value>
+    1: 'New',
+    2: 'Waiting for compile',
+    3: 'Compiling',
+    4: 'Waiting for run',
+    _RUNNING_STATUS: 'Running',
+    6: 'Judge Error',
+    7: 'Submission Error',
+    _COMPILE_ERROR_STATUS: 'Compile Error',
+    9: 'Run Time Error',
+    10: 'Memory Limit Exceeded',
+    11: 'Output Limit Exceeded',
+    12: 'Time Limit Exceeded',
+    13: 'Illegal Function',
+    14: 'Wrong Answer',
+    # 15: '<invalid value>',
+    _ACCEPTED_STATUS: 'Accepted',
+}
 
 
 class ConfigError(Exception):
@@ -243,16 +268,86 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         sys.exit(1)
 
 
-def open_submission(submit_response, cfg):
-    submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
-
+def get_submission_url(submit_response, cfg):
     m = re.search(r'Submission ID: (\d+)', submit_response)
     if m:
+        submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
         submission_id = m.group(1)
-        print('Open in browser (y/N)?')
-        if sys.stdin.readline().upper()[:-1] == 'Y':
-            url = '%s/%s' % (submissions_url, submission_id)
-            webbrowser.open(url)
+        return '%s/%s' % (submissions_url, submission_id)
+
+
+def get_submission_status(submission_url, cookies):
+    reply = requests.get(submission_url + '?json', cookies=cookies, headers=_HEADERS)
+    return reply.json()
+
+
+_RED_COLOR = 31
+_GREEN_COLOR = 32
+def color(s, c):
+    return '\x1b[%sm%s\x1b[0m' % (c, s)
+
+
+def show_judgement(submission_url, cfg):
+    print()
+    login_reply = login_from_config(cfg)
+    while True:
+        status = get_submission_status(submission_url, login_reply.cookies)
+        status_id = status['status_id']
+        testcases_done = status['testcase_index']
+        testcases_total = status['row_html'].count('<i') - 1
+
+        status_text = _STATUS_MAP.get(status_id, 'Unknown status %s' % status_id)
+
+
+        if status_id < _RUNNING_STATUS:
+            print('\r%s...' % (status_text), end='')
+        else:
+            print('\rTest cases: ', end='')
+
+        if status_id == _COMPILE_ERROR_STATUS:
+            print('\r%s' % color(status_text, _RED_COLOR), end='')
+            try:
+                root = fragment_fromstring(status['feedback_html'], create_parent=True)
+                error = root.find('.//pre').text
+                print(color(':', _RED_COLOR))
+                print(error, end='')
+            except:
+                pass
+        elif status_id < _RUNNING_STATUS:
+            print('\r%s...' % (status_text), end='')
+        else:
+            print('\rTest cases: ', end='')
+
+            if testcases_total == 0:
+                print('???', end='')
+            else:
+                s = '.' * (testcases_done - 1)
+                if status_id == _RUNNING_STATUS:
+                    s += '?'
+                elif status_id == _ACCEPTED_STATUS:
+                    s += '.'
+                else:
+                    s += 'x'
+
+                print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
+
+        sys.stdout.flush()
+
+        if status_id > _RUNNING_STATUS:
+            # Done
+            print()
+            success = status_id == _ACCEPTED_STATUS
+            try:
+                root = fragment_fromstring(status['row_html'], create_parent=True)
+                cpu_time = root.find('.//*[@data-type="cpu"]').text
+                status_text += " (" + cpu_time + ")"
+            except:
+                pass
+            if status_id != _COMPILE_ERROR_STATUS:
+                print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
+            return success
+
+        time.sleep(0.25)
 
 
 def main():
@@ -355,10 +450,16 @@ extension "%s"''' % (ext,))
     plain_result = result.content.decode('utf-8').replace('<br />', '\n')
     print(plain_result)
 
+    submission_url = None
     try:
-        open_submission(plain_result, cfg)
+        submission_url = get_submission_url(plain_result, cfg)
     except configparser.NoOptionError:
         pass
+
+    if submission_url:
+        print(submission_url)
+        if not show_judgement(submission_url, cfg):
+            sys.exit(1)
 
 
 if __name__ == '__main__':
