@@ -64,7 +64,7 @@ _LANGUAGE_GUESS = {
 }
 
 _GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
-_GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
+_GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript (Node.js)', 'Rust', 'Pascal'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
