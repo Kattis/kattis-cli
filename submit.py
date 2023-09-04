@@ -61,6 +61,7 @@ _LANGUAGE_GUESS = {
     '.vb': 'Visual Basic',
     '.dart': 'Dart',
     '.zig': 'Zig',
+    '.swift': 'Swift',
 }
 
 _GUESS_MAINCLASS = {'Java', 'Kotlin', 'Scala'}
