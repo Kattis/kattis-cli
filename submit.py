@@ -62,6 +62,7 @@ _LANGUAGE_GUESS = {
     '.dart': 'Dart',
     '.zig': 'Zig',
     '.swift': 'Swift',
+    '.nim': 'Nim',
 }
 
 _GUESS_MAINCLASS = {'Java', 'Kotlin', 'Scala'}
