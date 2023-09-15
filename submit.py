@@ -57,10 +57,16 @@ _LANGUAGE_GUESS = {
     '.sh': 'Bash',
     '.apl': 'APL',
     '.ss': 'Gerbil',
+    '.jl': 'Julia',
+    '.vb': 'Visual Basic',
+    '.dart': 'Dart',
+    '.zig': 'Zig',
+    '.swift': 'Swift',
+    '.nim': 'Nim',
 }
 
-_GUESS_MAINCLASS = {'Java', 'Scala', 'Kotlin'}
-_GUESS_MAINFILE = {'Python 2', 'Python 3', 'PHP', 'JavaScript', 'Rust', 'Pascal'}
+_GUESS_MAINCLASS = {'Java', 'Kotlin', 'Scala'}
+_GUESS_MAINFILE = {'APL', 'Bash', 'Dart', 'Gerbil', 'JavaScript (Node.js)', 'Julia', 'Common Lisp', 'Pascal', 'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'TypeScript', 'Zig'}
 
 _HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
