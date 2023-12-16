@@ -238,7 +238,7 @@ Please download a new .kattisrc file''')
     return login(loginurl, username, password, token)
 
 
-def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
+def submit(submit_url, cookies, problem, language, files, mainclass='', tag='', assignment=None, contest=None):
     """Make a submission.
 
     The url_opener argument is an OpenerDirector object to use (as
@@ -255,6 +255,10 @@ def submit(submit_url, cookies, problem, language, files, mainclass='', tag=''):
             'tag': tag,
             'script': 'true'}
 
+    if assignment is not None:
+        data['assignment'] = assignment
+    if contest is not None:
+        data['contest'] = contest
     sub_files = []
     for f in files:
         with open(f, 'rb') as sub_file:
@@ -367,6 +371,13 @@ def show_judgement(submission_url, cfg):
 
 def main():
     parser = argparse.ArgumentParser(prog='kattis', description='Submit a solution to Kattis')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-a', '--assignment',
+                        help='''Short name of assignment you want to submit to
+Overrides default guess (server guesses based on assignments you are in)''')
+    group.add_argument('-c', '--contest',
+                        help='''Short name of contest you want to submit to
+Overrides default guess (server guesses based on contests you are in)''')
     parser.add_argument('-p', '--problem',
                         help=''''Which problem to submit to.
 Overrides default guess (first part of first filename)''')
@@ -447,7 +458,9 @@ extension "%s"''' % (ext,))
                         language,
                         files,
                         mainclass,
-                        tag)
+                        tag,
+                        args.assignment,
+                        args.contest)
     except requests.exceptions.RequestException as err:
         print('Submit connection failed:', err)
         sys.exit(1)
