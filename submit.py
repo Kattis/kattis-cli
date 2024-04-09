@@ -63,12 +63,23 @@ _LANGUAGE_GUESS = {
     '.zig': 'Zig',
     '.swift': 'Swift',
     '.nim': 'Nim',
+    '.lua': 'Lua',
+    '.pm': 'Perl',
+    '.sno': 'SNOBOL',
+    '.odin': 'Odin',
+    '.a68': 'Algol 68',
+    '.cr': 'Crystal',
+    '.sim': 'Simula',
 }
 
-_GUESS_MAINCLASS = {'Java', 'Kotlin', 'Scala'}
-_GUESS_MAINFILE = {'APL', 'Bash', 'Dart', 'Gerbil', 'JavaScript (Node.js)', 'Julia', 'Common Lisp', 'Pascal', 'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'TypeScript', 'Zig'}
+_GUESS_MAINCLASS = { 'Java', 'Kotlin', 'Scala' }
+_GUESS_MAINFILE = {
+	'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Gerbil', 'JavaScript (Node.js)',
+	'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl',
+	'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'Simula', 'SNOBOL', 'TypeScript', 'Zig',
+}
 
-_HEADERS = {'User-Agent': 'kattis-cli-submit'}
+_HEADERS = { 'User-Agent': 'kattis-cli-submit' }
 
 _RUNNING_STATUS = 5
 _COMPILE_ERROR_STATUS = 8
@@ -81,7 +92,7 @@ _STATUS_MAP = {
     4: 'Waiting for run',
     _RUNNING_STATUS: 'Running',
     6: 'Judge Error',
-    7: 'Submission Error',
+    # 7: '<invalid value>',
     _COMPILE_ERROR_STATUS: 'Compile Error',
     9: 'Run Time Error',
     10: 'Memory Limit Exceeded',
