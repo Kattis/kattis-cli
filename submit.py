@@ -7,8 +7,6 @@ import requests
 import sys
 import time
 
-from lxml.html import fragment_fromstring
-
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _LANGUAGE_GUESS = {
     '.4th': 'Forth',
@@ -326,8 +324,10 @@ def show_judgement(submission_url, cfg):
         status = get_submission_status(submission_url, login_reply.cookies)
         status_id = status['status_id']
         score = status['score']
+        runtime = status['runtime']
         testcases_done = status['testcase_index']
-        testcases_total = status['row_html'].count('<i') - 1
+        testcases_total = int(status['testcase_count'])
+        compiler_feedback = status['compiler_feedback']
 
         status_text = _STATUS_MAP.get(status_id, f'Unknown status {status_id}')
 
@@ -339,13 +339,9 @@ def show_judgement(submission_url, cfg):
 
         if status_id == _COMPILE_ERROR_STATUS:
             print(f'\r{color(status_text, _RED_COLOR)}', end='')
-            try:
-                root = fragment_fromstring(status['feedback_html'], create_parent=True)
-                error = root.find('.//pre').text
+            if compiler_feedback:
                 print(color(':', _RED_COLOR))
-                print(error, end='')
-            except:
-                pass
+                print(compiler_feedback, end='')
         elif status_id < _RUNNING_STATUS:
             print(f'\r{status_text}...', end='')
         else:
@@ -372,12 +368,7 @@ def show_judgement(submission_url, cfg):
             success = status_id == _ACCEPTED_STATUS
             if success:
                 status_text += f' ({score})'
-            try:
-                root = fragment_fromstring(status['row_html'], create_parent=True)
-                cpu_time = root.find('.//*[@data-type="cpu"]').text
-                status_text += f' ({cpu_time})'
-            except:
-                pass
+            status_text += f' ({runtime} s)'
             if status_id != _COMPILE_ERROR_STATUS:
                 print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
             return success
