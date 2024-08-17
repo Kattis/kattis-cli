@@ -74,9 +74,9 @@ _LANGUAGE_GUESS = {
 
 _GUESS_MAINCLASS = { 'Java', 'Kotlin', 'Scala' }
 _GUESS_MAINFILE = {
-	'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Gerbil', 'JavaScript (Node.js)',
-	'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl',
-	'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'Simula', 'SNOBOL', 'TypeScript', 'Zig',
+    'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Gerbil', 'JavaScript (Node.js)',
+    'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl',
+    'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'Simula', 'SNOBOL', 'TypeScript', 'Zig',
 }
 
 _HEADERS = { 'User-Agent': 'kattis-cli-submit' }
@@ -113,7 +113,8 @@ def get_url(cfg, option, default):
     if cfg.has_option('kattis', option):
         return cfg.get('kattis', option)
     else:
-        return 'https://%s/%s' % (cfg.get('kattis', 'hostname'), default)
+        hostname = cfg.get('kattis', 'hostname')
+        return f'https://{hostname}/{default}'
 
 
 def get_config():
@@ -303,7 +304,7 @@ def get_submission_url(submit_response, cfg):
     if m:
         submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
         submission_id = m.group(1)
-        return '%s/%s' % (submissions_url, submission_id)
+        return f'{submissions_url}/{submission_id}'
 
 
 def get_submission_status(submission_url, cookies):
@@ -314,7 +315,7 @@ def get_submission_status(submission_url, cookies):
 _RED_COLOR = 31
 _GREEN_COLOR = 32
 def color(s, c):
-    return '\x1b[%sm%s\x1b[0m' % (c, s)
+    return f'\x1b[{c}m{s}\x1b[0m'
 
 
 def show_judgement(submission_url, cfg):
@@ -326,16 +327,16 @@ def show_judgement(submission_url, cfg):
         testcases_done = status['testcase_index']
         testcases_total = status['row_html'].count('<i') - 1
 
-        status_text = _STATUS_MAP.get(status_id, 'Unknown status %s' % status_id)
+        status_text = _STATUS_MAP.get(status_id, f'Unknown status {status_id}')
 
 
         if status_id < _RUNNING_STATUS:
-            print('\r%s...' % (status_text), end='')
+            print(f'\r{status_text}...', end='')
         else:
             print('\rTest cases: ', end='')
 
         if status_id == _COMPILE_ERROR_STATUS:
-            print('\r%s' % color(status_text, _RED_COLOR), end='')
+            print(f'\r{color(status_text, _RED_COLOR)}', end='')
             try:
                 root = fragment_fromstring(status['feedback_html'], create_parent=True)
                 error = root.find('.//pre').text
@@ -344,7 +345,7 @@ def show_judgement(submission_url, cfg):
             except:
                 pass
         elif status_id < _RUNNING_STATUS:
-            print('\r%s...' % (status_text), end='')
+            print(f'\r{status_text}...', end='')
         else:
             print('\rTest cases: ', end='')
 
@@ -359,7 +360,7 @@ def show_judgement(submission_url, cfg):
                 else:
                     s += 'x'
 
-                print('[%-*s]  %d / %d' % (testcases_total, s, testcases_done, testcases_total), end='')
+                print(f'[{testcases_total: <{s}}]  {testcases_done} / {testcases_total}', end='')
 
         sys.stdout.flush()
 
@@ -431,9 +432,9 @@ Overrides default guess (based on suffix of first filename)''')
         language = args.language
 
     if language is None:
-        print('''\
+        print(f'''\
 No language specified, and I failed to guess language from filename
-extension "%s"''' % (ext,))
+extension "{ext}"''')
         sys.exit(1)
 
     files = sorted(list(set(args.files)))
