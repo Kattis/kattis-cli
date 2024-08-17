@@ -325,6 +325,7 @@ def show_judgement(submission_url, cfg):
     while True:
         status = get_submission_status(submission_url, login_reply.cookies)
         status_id = status['status_id']
+        score = status['score']
         testcases_done = status['testcase_index']
         testcases_total = status['row_html'].count('<i') - 1
 
@@ -369,10 +370,12 @@ def show_judgement(submission_url, cfg):
             # Done
             print()
             success = status_id == _ACCEPTED_STATUS
+            if success:
+                status_text += f' ({score})'
             try:
                 root = fragment_fromstring(status['row_html'], create_parent=True)
                 cpu_time = root.find('.//*[@data-type="cpu"]').text
-                status_text += " (" + cpu_time + ")"
+                status_text += f' ({cpu_time})'
             except:
                 pass
             if status_id != _COMPILE_ERROR_STATUS:
