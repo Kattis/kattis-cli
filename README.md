@@ -1,5 +1,5 @@
 # Kattis CLI
-Kattis online judge command line tool written in Python.  Runs both in Python 2 and in Python 3.
+Kattis online judge command line tool written in Python.  Requires Python 3.
 
 # Install the client
 

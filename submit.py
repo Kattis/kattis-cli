@@ -1,24 +1,13 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import argparse
+import configparser
 import os
 import re
+import requests
 import sys
 import time
 
-import requests
-import requests.exceptions
-
 from lxml.html import fragment_fromstring
-
-# Python 2/3 compatibility
-if sys.version_info[0] >= 3:
-    import configparser
-else:
-    # Python 2, import modules with Python 3 names
-    import ConfigParser as configparser
-
-# End Python 2/3 compatibility
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _LANGUAGE_GUESS = {
