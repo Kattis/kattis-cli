@@ -11,6 +11,7 @@ from lxml.html import fragment_fromstring
 
 _DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
 _LANGUAGE_GUESS = {
+    '.4th': 'Forth',
     '.c': 'C',
     '.c++': 'C++',
     '.cc': 'C++',
@@ -21,7 +22,10 @@ _LANGUAGE_GUESS = {
     '.cbl': 'COBOL',
     '.cob': 'COBOL',
     '.cpy': 'COBOL',
+    '.forth': 'Forth',
+    '.frt': 'Forth',
     '.fs': 'F#',
+    '.fth': 'Forth',
     '.go': 'Go',
     '.hs': 'Haskell',
     '.java': 'Java',
@@ -38,6 +42,7 @@ _LANGUAGE_GUESS = {
     '.py': 'Python 3',
     '.pyc': 'Python 3',
     '.rb': 'Ruby',
+    '.rkt': 'Racket',
     '.rs': 'Rust',
     '.scala': 'Scala',
     '.f90': 'Fortran',
@@ -58,14 +63,21 @@ _LANGUAGE_GUESS = {
     '.odin': 'Odin',
     '.a68': 'Algol 68',
     '.cr': 'Crystal',
-    '.sim': 'Simula',
+    '.sim': 'Simula 67',
+    '.d': 'D',
+    '.mod': 'Modula-2',
+    '.st': 'Smalltalk',
+    '.adb': 'Ada',
+    '.ads': 'Ada',
+    '.erl': 'Erlang',
+    '.ex': 'Elixir',
 }
 
-_GUESS_MAINCLASS = { 'Java', 'Kotlin', 'Scala' }
+_GUESS_MAINCLASS = { 'Elixir', 'Erlang', 'Java', 'Kotlin', 'Modula-2', 'Scala' }
 _GUESS_MAINFILE = {
-    'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Gerbil', 'JavaScript (Node.js)',
-    'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl',
-    'PHP', 'Python 2', 'Python 3', 'Ruby', 'Rust', 'Simula', 'SNOBOL', 'TypeScript', 'Zig',
+    'Ada', 'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Forth', 'Gerbil', 'JavaScript (Node.js)',
+    'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl', 'PHP',
+	'Python 2', 'Python 3', 'Racket', 'Ruby', 'Rust', 'Simula', 'Smalltalk', 'SNOBOL', 'TypeScript', 'Zig',
 }
 
 _HEADERS = { 'User-Agent': 'kattis-cli-submit' }
