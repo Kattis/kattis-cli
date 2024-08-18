@@ -361,7 +361,7 @@ def show_judgement(submission_url, cfg):
                 else:
                     s += 'x'
 
-                print(f'[{testcases_total: <{s}}]  {testcases_done} / {testcases_total}', end='')
+                print(f'[{s: <{testcases_total}}]  {testcases_done} / {testcases_total}', end='')
 
         sys.stdout.flush()
 
