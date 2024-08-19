@@ -9,6 +9,8 @@ To run the client directly, `cd` into the `kattis-cli` directory and run `python
 
 See the section for your operating system below for instructions on how to install the submission client as a command runnable from anywhere on your file system.
 
+If the `python` command is not installed, try using `python3` instead.
+
 ## Windows
 
 To run the client as a command, you can create a file `kattis.bat` in `kattis-cli`:
