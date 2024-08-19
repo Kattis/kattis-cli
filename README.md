@@ -1,20 +1,35 @@
 # Kattis CLI
-Kattis online judge command line tool written in Python.  Requires Python 3.
+
+Kattis online judge command line tool written in Python. Requires Python 3.
 
 # Install the client
 
 Run `git clone https://github.com/Kattis/kattis-cli` to clone the repository.
-To run the client, `cd` into the `kattis-cli` directory and run `python submit.py`.
+To run the client directly, `cd` into the `kattis-cli` directory and run `python submit.py`.
 
-The repository also contains files for running the submission client as a command from anywhere on your file system. Checkout the instructions for your operating system to see how to proceed.
+See the section for your operating system below for instructions on how to install the submission client as a command runnable from anywhere on your file system.
 
 ## Windows
-To run the client as a command, you need to add the `kattis-cli` directory to your `%PATH%` variable.
+
+To run the client as a command, you can create a file `kattis.bat` in `kattis-cli`:
+```bat
+@echo off
+python %~dp0\submit.py %*
+```
+
+To install it, you can add the `kattis-cli` directory to your `%PATH%` variable.
 To do that, run `setx PATH "%PATH%;C:\Users\user\Desktop\kattis-cli"` where `C:\Users\user\Desktop\kattis-cli` is the path to your cloned repository.
 You can now run the command `kattis` from anywhere!
 
 ## MacOS/Linux
-To run the client as a command, you need to add the `kattis-cli` directory to your `$PATH` variable.
+
+To run the client as a command, you can create an executable file `kattis` in `kattis-cli`:
+```sh
+#!/bin/sh
+python "${BASH_SOURCE%/*}/submit.py" "$@"
+```
+
+To install it, you can add the `kattis-cli` directory to your `$PATH` variable.
 To do that, open the file `~/.bash_profile` in a text editor and add the line `export PATH="$PATH:/Users/user/Desktop/kattis-cli"`, where `/Users/user/Desktop/kattis-cli` is the path to the `kattis-cli` directory, at the end of the file.
 You can now run the command `kattis` from anywhere!
 **Note:** You might need admin privileges to change the file.

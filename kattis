@@ -1,2 +1,0 @@
-#!/bin/sh
-python "${BASH_SOURCE%/*}/submit.py" "$@"
