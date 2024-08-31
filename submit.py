@@ -125,9 +125,14 @@ def get_config():
     if os.path.exists(_DEFAULT_CONFIG):
         cfg.read(_DEFAULT_CONFIG)
 
+    try:
+        file = __file__
+    except NameError:
+        file = sys.argv[0]
+
     if not cfg.read([os.path.join(os.path.expanduser("~"), '.kattisrc'),
-                     os.path.join(os.path.dirname(__file__), '.kattisrc'),
-                     os.path.join(os.path.dirname(os.path.realpath(__file__)), '.kattisrc')]):
+                     os.path.join(os.path.dirname(file), '.kattisrc'),
+                     os.path.join(os.path.dirname(os.path.realpath(file)), '.kattisrc')]):
         raise ConfigError('''\
 I failed to read in a config file from your home directory or from the
 same directory as this script. To download a .kattisrc file please visit
