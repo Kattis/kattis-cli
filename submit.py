@@ -164,6 +164,8 @@ def is_python2(files):
                             return False
                     if python2.search(line.split('#')[0]):
                         return True
+        except UnicodeDecodeError:
+            pass
         except IOError:
             return False
     return False
@@ -198,6 +200,8 @@ def guess_mainfile(language, files):
                     return filename
                 if language == 'Pascal' and re.match(r'^\s*[Pp]rogram\b', conts):
                     return filename
+        except UnicodeDecodeError:
+            pass
         except IOError:
             pass
     return files[0]
@@ -321,12 +325,12 @@ def get_submission_status(submission_url, cookies):
 
 _RED_COLOR = 31
 _GREEN_COLOR = 32
+_YELLOW_COLOR = 33
 def color(s, c):
     return f'\x1b[{c}m{s}\x1b[0m'
 
 
 def show_judgement(submission_url, cfg):
-    print()
     login_reply = login_from_config(cfg)
     while True:
         status = get_submission_status(submission_url, login_reply.cookies)
@@ -335,7 +339,6 @@ def show_judgement(submission_url, cfg):
         testcases_total = status['row_html'].count('<i') - 1
 
         status_text = _STATUS_MAP.get(status_id, f'Unknown status {status_id}')
-
 
         if status_id < _RUNNING_STATUS:
             print(f'\r{status_text}...', end='')
@@ -359,15 +362,14 @@ def show_judgement(submission_url, cfg):
             if testcases_total == 0:
                 print('???', end='')
             else:
-                s = '.' * (testcases_done - 1)
+                progress = ''
+                for i in re.findall(r'<i class="([\w\- ]*)" title', status['row_html']):
+                    if 'is-empty' in i: break
+                    if 'accepted' in i: progress += color('.', _GREEN_COLOR)
+                    if 'rejected' in i: progress += color('x', _RED_COLOR)
                 if status_id == _RUNNING_STATUS:
-                    s += '?'
-                elif status_id == _ACCEPTED_STATUS:
-                    s += '.'
-                else:
-                    s += 'x'
-
-                print(f'[{s: <{testcases_total}}]  {testcases_done} / {testcases_total}', end='')
+                    progress = progress[:10*(testcases_done - 1)]+color('?', _YELLOW_COLOR)
+                print(f'[{progress}{" " * (9*testcases_done + testcases_total - len(progress))}]  {testcases_done} / {testcases_total}', end='')
 
         sys.stdout.flush()
 
@@ -377,8 +379,12 @@ def show_judgement(submission_url, cfg):
             success = status_id == _ACCEPTED_STATUS
             try:
                 root = fragment_fromstring(status['row_html'], create_parent=True)
-                cpu_time = root.find('.//*[@data-type="cpu"]').text
-                status_text += " (" + cpu_time + ")"
+                cpu_time = root.xpath('.//*[@data-type="cpu"]')[0].text_content()
+                try:
+                    score = re.findall('\(([\d\.]+)\)', root.xpath('.//*[@data-type="status"]')[0].text_content())[0]
+                except:
+                    score = ''
+                status_text += " (" + cpu_time + ', ' + score + ")" if score else " (" + cpu_time + ")"
             except:
                 pass
             if status_id != _COMPILE_ERROR_STATUS:
@@ -477,9 +483,7 @@ extension "{ext}"''')
                         language,
                         files,
                         mainclass,
-                        tag,
-                        args.assignment,
-                        args.contest)
+                        tag)
     except requests.exceptions.RequestException as err:
         print('Submit connection failed:', err)
         sys.exit(1)
@@ -495,6 +499,7 @@ extension "{ext}"''')
         sys.exit(1)
 
     plain_result = result.content.decode('utf-8').replace('<br />', '\n')
+
     print(plain_result)
 
     submission_url = None
@@ -504,7 +509,6 @@ extension "{ext}"''')
         pass
 
     if submission_url:
-        print(submission_url)
         if not show_judgement(submission_url, cfg):
             sys.exit(1)
 
