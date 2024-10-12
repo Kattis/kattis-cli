@@ -368,7 +368,7 @@ def show_judgement(submission_url, cfg):
                     if 'accepted' in i: progress += color('.', _GREEN_COLOR)
                     if 'rejected' in i: progress += color('x', _RED_COLOR)
                 if status_id == _RUNNING_STATUS:
-                    progress = progress[:10*(testcases_done - 1)]+color('?', _YELLOW_COLOR)
+                    progress = progress[:10*(testcases_done - 1)] + color('?', _YELLOW_COLOR)
                 print(f'[{progress}{" " * (9*testcases_done + testcases_total - len(progress))}]  {testcases_done} / {testcases_total}', end='')
 
         sys.stdout.flush()
@@ -476,29 +476,32 @@ extension "{ext}"''')
     if not args.force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
-    try:
-        result = submit(submit_url,
-                        login_reply.cookies,
-                        problem,
-                        language,
-                        files,
-                        mainclass,
-                        tag)
-    except requests.exceptions.RequestException as err:
-        print('Submit connection failed:', err)
-        sys.exit(1)
+    while True:
+        try:
+            result = submit(submit_url,
+                            login_reply.cookies,
+                            problem,
+                            language,
+                            files,
+                            mainclass,
+                            tag)
+        except requests.exceptions.RequestException as err:
+            print('Submit connection failed:', err)
+            sys.exit(1)
 
-    if result.status_code != 200:
-        print('Submission failed.')
-        if result.status_code == 403:
-            print('Access denied (403)')
-        elif result.status_code == 404:
-            print('Incorrect submit URL (404)')
-        else:
-            print('Status code:', result.status_code)
-        sys.exit(1)
+        if result.status_code != 200:
+            print('Submission failed.')
+            if result.status_code == 403:
+                print('Access denied (403)')
+            elif result.status_code == 404:
+                print('Incorrect submit URL (404)')
+            else:
+                print('Status code:', result.status_code)
+            sys.exit(1)
 
-    plain_result = result.content.decode('utf-8').replace('<br />', '\n')
+        plain_result = result.content.decode('utf-8').replace('<br />', '\n')
+        if plain_result.startswith('You are out of submission tokens.'): time.sleep(3); continue
+        break
 
     print(plain_result)
 
