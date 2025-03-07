@@ -367,6 +367,8 @@ def show_judgement(submission_url, cfg):
                     if 'is-empty' in i: break
                     if 'accepted' in i: progress += color('.', _GREEN_COLOR)
                     if 'rejected' in i: progress += color('x', _RED_COLOR)
+
+                # NB: We need to do the following math since len(color('.', _SOME_COLOR)) == 10
                 if status_id == _RUNNING_STATUS:
                     progress = progress[:10*(testcases_done - 1)] + color('?', _YELLOW_COLOR)
                 print(f'[{progress}{" " * (9*testcases_done + testcases_total - len(progress))}]  {testcases_done} / {testcases_total}', end='')
@@ -381,7 +383,7 @@ def show_judgement(submission_url, cfg):
                 root = fragment_fromstring(status['row_html'], create_parent=True)
                 cpu_time = root.xpath('.//*[@data-type="cpu"]')[0].text_content()
                 try:
-                    score = re.findall('\(([\d\.]+)\)', root.xpath('.//*[@data-type="status"]')[0].text_content())[0]
+                    score = re.findall(r'\(([\d\.]+)\)', root.xpath('.//*[@data-type="status"]')[0].text_content())[0]
                 except:
                     score = ''
                 status_text += " (" + cpu_time + ', ' + score + ")" if score else " (" + cpu_time + ")"
@@ -484,7 +486,9 @@ extension "{ext}"''')
                             language,
                             files,
                             mainclass,
-                            tag)
+                            tag,
+                            args.assignment,
+                            args.contest)
         except requests.exceptions.RequestException as err:
             print('Submit connection failed:', err)
             sys.exit(1)
@@ -500,7 +504,6 @@ extension "{ext}"''')
             sys.exit(1)
 
         plain_result = result.content.decode('utf-8').replace('<br />', '\n')
-        if plain_result.startswith('You are out of submission tokens.'): time.sleep(3); continue
         break
 
     print(plain_result)
