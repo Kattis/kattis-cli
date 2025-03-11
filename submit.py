@@ -478,34 +478,31 @@ extension "{ext}"''')
     if not args.force:
         confirm_or_die(problem, language, files, mainclass, tag)
 
-    while True:
-        try:
-            result = submit(submit_url,
-                            login_reply.cookies,
-                            problem,
-                            language,
-                            files,
-                            mainclass,
-                            tag,
-                            args.assignment,
-                            args.contest)
-        except requests.exceptions.RequestException as err:
-            print('Submit connection failed:', err)
-            sys.exit(1)
+    try:
+        result = submit(submit_url,
+                        login_reply.cookies,
+                        problem,
+                        language,
+                        files,
+                        mainclass,
+                        tag,
+                        args.assignment,
+                        args.contest)
+    except requests.exceptions.RequestException as err:
+        print('Submit connection failed:', err)
+        sys.exit(1)
 
-        if result.status_code != 200:
-            print('Submission failed.')
-            if result.status_code == 403:
-                print('Access denied (403)')
-            elif result.status_code == 404:
-                print('Incorrect submit URL (404)')
-            else:
-                print('Status code:', result.status_code)
-            sys.exit(1)
+    if result.status_code != 200:
+        print('Submission failed.')
+        if result.status_code == 403:
+            print('Access denied (403)')
+        elif result.status_code == 404:
+            print('Incorrect submit URL (404)')
+        else:
+            print('Status code:', result.status_code)
+        sys.exit(1)
 
-        plain_result = result.content.decode('utf-8').replace('<br />', '\n')
-        break
-
+    plain_result = result.content.decode('utf-8').replace('<br />', '\n')
     print(plain_result)
 
     submission_url = None
