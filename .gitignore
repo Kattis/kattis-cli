@@ -1,1 +1,3 @@
-.kattisrc
+**/*.kattisrc
+**/*.venv
+**/__pycache__
