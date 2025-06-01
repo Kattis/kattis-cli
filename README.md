@@ -19,6 +19,8 @@ To run the client as a command, you can create a file `kattis.bat` in `kattis-cl
 python %~dp0\submit.py %*
 ```
 
+If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python` with `<venv>\Scripts\python`, where `<venv>` is the path to your environment.
+
 To install it, you can add the `kattis-cli` directory to your `%PATH%` variable.
 To do that, run `setx PATH "%PATH%;C:\Users\user\Desktop\kattis-cli"` where `C:\Users\user\Desktop\kattis-cli` is the path to your cloned repository.
 You can now run the command `kattis` from anywhere!
@@ -30,6 +32,8 @@ To run the client as a command, you can create an executable file `kattis` in `k
 #!/bin/sh
 python "${BASH_SOURCE%/*}/submit.py" "$@"
 ```
+
+If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python` with `<venv>/bin/python`, where `<venv>` is the path to your environment.
 
 To install it, you can add the `kattis-cli` directory to your `$PATH` variable.
 To do that, open the file `~/.bash_profile` in a text editor and add the line `export PATH="$PATH:/Users/user/Desktop/kattis-cli"`, where `/Users/user/Desktop/kattis-cli` is the path to the `kattis-cli` directory, at the end of the file.
@@ -46,7 +50,26 @@ The easiest way to use the client is if you have named your source code to *prob
 
 Let's assume you're solving the problem [Hello World!](https://open.kattis.com/problems/hello) (with problem id `hello`) and that your java solution is in the file `Hello.java`. Then you can simply run `kattis Hello.java`, and the client will make the correct guesses. You will always be prompted before a submission is sent.
 
-**Note:** If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `kattis` it's because the module 'requests' isn't installed. To install the module, check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer.
+## Required Packages
+
+The client requires the `requests` and `lxml` PyPi packages.
+To install them, you can `cd` into the `kattis-cli` directory and run the command `pip install -U -r requirements.txt`.
+Alternatively, you can install them directly using `pip install -U requests lxml`.
+
+While not required, it is recommended that you use a virtual environment to avoid breaking other projects.
+Check out [this guide](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments) or [the documentation](https://docs.python.org/3/library/venv.html).
+When installing packages or running the client, remember to activate the environment first.
+
+If you plan to modify the client itself, the package `types-lxml` makes this more convenient in some editors.
+
+## Common Errors
+
+If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `kattis` it's because the module 'requests' isn't installed.
+To install the module, follow the above instructions or check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer.
+If you are using a virtual environment, make sure you activated it before installing the packages *and* before running the client.
+
+If you get an error message like this: `This environment is externally managed` when trying to install the required packages, the recommended solution is to use a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).
+Make sure to activate it before running pip. Check out [this](https://stackoverflow.com/a/75722775/5781491) StackOverflow answer for other solutions.
 
 # More advanced options
 
