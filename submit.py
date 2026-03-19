@@ -41,6 +41,8 @@ _LANGUAGE_GUESS = {
     '.pl': 'Prolog',
     '.py': 'Python 3',
     '.pyc': 'Python 3',
+    '.py2': 'Python 2',
+    '.py3': 'Python 3',
     '.rb': 'Ruby',
     '.rkt': 'Racket',
     '.rs': 'Rust',
@@ -151,26 +153,6 @@ submissionsurl: https://<kattis>/submissions''')
     return cfg
 
 
-def is_python2(files):
-    python2 = re.compile(r'^\s*\bprint\b *[^ \(\),\]]|\braw_input\b')
-    for filename in files:
-        try:
-            with open(filename) as f:
-                for index, line in enumerate(f):
-                    if index == 0 and line.startswith('#!'):
-                        if 'python2' in line:
-                            return True
-                        if 'python3' in line:
-                            return False
-                    if python2.search(line.split('#')[0]):
-                        return True
-        except UnicodeDecodeError:
-            pass
-        except IOError:
-            return False
-    return False
-
-
 def guess_language(ext, files):
     if ext == ".C":
         return "C++"
@@ -180,11 +162,6 @@ def guess_language(ext, files):
             return "C"
         else:
             return "C++"
-    if ext == ".py":
-        if is_python2(files):
-            return "Python 2"
-        else:
-            return "Python 3"
     return _LANGUAGE_GUESS.get(ext, None)
 
 
