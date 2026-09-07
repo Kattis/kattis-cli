@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 import argparse
-import configparser
-import os
 import re
 import requests
 import sys
 import time
+from configparser import ConfigParser, NoOptionError
+from os.path import expanduser
+from pathlib import Path
+from requests import Response
+from requests.cookies import RequestsCookieJar
+from requests.exceptions import RequestException
+from typing import TypedDict
 
 from lxml.html import fragment_fromstring
 
-_DEFAULT_CONFIG = '/usr/local/etc/kattisrc'
+_DEFAULT_CONFIG = Path('/usr/local/etc/kattisrc')
 _LANGUAGE_GUESS = {
     '.4th': 'Forth',
     '.c': 'C',
@@ -108,11 +113,18 @@ _STATUS_MAP = {
 }
 
 
+class SubmissionStatus(TypedDict):
+    status_id: int
+    testcase_index: int
+    row_html: str
+    feedback_html: str
+
+
 class ConfigError(Exception):
     pass
 
 
-def get_url(cfg, option, default):
+def get_url(cfg: ConfigParser, option: str, default: str) -> str:
     if cfg.has_option('kattis', option):
         return cfg.get('kattis', option)
     else:
@@ -120,21 +132,21 @@ def get_url(cfg, option, default):
         return f'https://{hostname}/{default}'
 
 
-def get_config():
+def get_config() -> ConfigParser:
     """Returns a ConfigParser object for the .kattisrc file(s)
     """
-    cfg = configparser.ConfigParser()
-    if os.path.exists(_DEFAULT_CONFIG):
+    cfg = ConfigParser()
+    if _DEFAULT_CONFIG.exists():
         cfg.read(_DEFAULT_CONFIG)
 
     try:
-        file = __file__
+        file = Path(__file__)
     except NameError:
-        file = sys.argv[0]
+        file = Path(sys.argv[0])
 
-    if not cfg.read([os.path.join(os.path.expanduser("~"), '.kattisrc'),
-                     os.path.join(os.path.dirname(file), '.kattisrc'),
-                     os.path.join(os.path.dirname(os.path.realpath(file)), '.kattisrc')]):
+    if not cfg.read([Path(expanduser('~/.kattisrc')),
+                     file.parent / '.kattisrc',
+                     file.resolve().parent / '.kattisrc']):
         raise ConfigError('''\
 I failed to read in a config file from your home directory or from the
 same directory as this script. To download a .kattisrc file please visit
@@ -153,25 +165,25 @@ submissionsurl: https://<kattis>/submissions''')
     return cfg
 
 
-def guess_language(ext, files):
-    if ext == ".C":
-        return "C++"
+def guess_language(ext: str, files: list[Path]) -> str | None:
+    if ext == '.C':
+        return 'C++'
     ext = ext.lower()
-    if ext == ".h":
-        if any(f.endswith(".c") for f in files):
-            return "C"
+    if ext == '.h':
+        if any(f.suffix == '.c' for f in files):
+            return 'C'
         else:
-            return "C++"
+            return 'C++'
     return _LANGUAGE_GUESS.get(ext, None)
 
 
-def guess_mainfile(language, files):
+def guess_mainfile(language: str, files: list[Path]) -> Path:
     for filename in files:
-        if os.path.splitext(os.path.basename(filename))[0] in ['main', 'Main']:
+        if filename.stem in ['main', 'Main']:
             return filename
     for filename in files:
         try:
-            with open(filename) as f:
+            with filename.open() as f:
                 conts = f.read()
                 if language in ['Java', 'Rust', 'Scala', 'Kotlin'] and re.search(r' main\s*\(', conts):
                     return filename
@@ -179,29 +191,28 @@ def guess_mainfile(language, files):
                     return filename
         except UnicodeDecodeError:
             pass
-        except IOError:
+        except OSError:
             pass
     return files[0]
 
 
-def guess_mainclass(language, files):
+def guess_mainclass(language: str | None, files: list[Path]) -> str | None:
     if language in _GUESS_MAINFILE and len(files) > 1:
-        return os.path.basename(guess_mainfile(language, files))
+        return guess_mainfile(language, files).name
     if language in _GUESS_MAINCLASS:
-        mainfile = os.path.basename(guess_mainfile(language, files))
-        name = os.path.splitext(mainfile)[0]
+        name = guess_mainfile(language, files).stem
         if language == 'Kotlin':
             return name[0].upper() + name[1:] + 'Kt'
         return name
     return None
 
 
-def login(login_url, username, password=None, token=None):
+def login(login_url: str, username: str, password: str | None, token: str | None) -> Response:
     """Log in to Kattis.
 
     At least one of password or token needs to be provided.
 
-    Returns a requests.Response with cookies needed to be able to submit
+    Returns a Response with cookies needed to be able to submit
     """
     login_args = {'user': username, 'script': 'true'}
     if password:
@@ -212,20 +223,20 @@ def login(login_url, username, password=None, token=None):
     return requests.post(login_url, data=login_args, headers=_HEADERS)
 
 
-def login_from_config(cfg):
+def login_from_config(cfg: ConfigParser) -> Response:
     """Log in to Kattis using the access information in a kattisrc file
 
-    Returns a requests.Response with cookies needed to be able to submit
+    Returns a Response with cookies needed to be able to submit
     """
     username = cfg.get('user', 'username')
     password = token = None
     try:
         password = cfg.get('user', 'password')
-    except configparser.NoOptionError:
+    except NoOptionError:
         pass
     try:
         token = cfg.get('user', 'token')
-    except configparser.NoOptionError:
+    except NoOptionError:
         pass
     if password is None and token is None:
         raise ConfigError('''\
@@ -238,22 +249,31 @@ Please download a new .kattisrc file''')
     return login(loginurl, username, password, token)
 
 
-def submit(submit_url, cookies, problem, language, files, mainclass='', tag='', assignment=None, contest=None):
+def submit(
+    submit_url: str,
+    cookies: RequestsCookieJar,
+    problem: str,
+    language: str,
+    files: list[Path],
+    mainclass: str | None,
+    tag: str,
+    assignment: str | None,
+    contest: str | None,
+) -> Response:
     """Make a submission.
 
-    The url_opener argument is an OpenerDirector object to use (as
-    returned by the login() function)
-
-    Returns the requests.Result from the submission
+    Returns the Response from the submission
     """
 
-    data = {'submit': 'true',
-            'submit_ctr': 2,
-            'language': language,
-            'mainclass': mainclass,
-            'problem': problem,
-            'tag': tag,
-            'script': 'true'}
+    data = {
+        'submit': 'true',
+        'submit_ctr': 2,
+        'language': language,
+        'mainclass': mainclass,
+        'problem': problem,
+        'tag': tag,
+        'script': 'true'
+    }
 
     if assignment is not None:
         data['assignment'] = assignment
@@ -261,19 +281,19 @@ def submit(submit_url, cookies, problem, language, files, mainclass='', tag='', 
         data['contest'] = contest
     sub_files = []
     for f in files:
-        with open(f, 'rb') as sub_file:
+        with f.open('rb') as sub_file:
             sub_files.append(('sub_file[]',
-                              (os.path.basename(f),
+                              (f.name,
                                sub_file.read(),
                                'application/octet-stream')))
 
     return requests.post(submit_url, data=data, files=sub_files, cookies=cookies, headers=_HEADERS)
 
 
-def confirm_or_die(problem, language, files, mainclass, tag):
+def confirm_or_die(problem: str, language: str, files: list[Path], mainclass: str | None, tag: str) -> None:
     print('Problem:', problem)
     print('Language:', language)
-    print('Files:', ', '.join(files))
+    print('Files:', ', '.join(str(file) for file in files))
     if mainclass:
         if language in _GUESS_MAINFILE:
             print('Main file:', mainclass)
@@ -287,15 +307,17 @@ def confirm_or_die(problem, language, files, mainclass, tag):
         sys.exit(1)
 
 
-def get_submission_url(submit_response, cfg):
+def get_submission_url(submit_response: str, cfg: ConfigParser) -> str | None:
     m = re.search(r'Submission ID: (\d+)', submit_response)
     if m:
         submissions_url = get_url(cfg, 'submissionsurl', 'submissions')
         submission_id = m.group(1)
         return f'{submissions_url}/{submission_id}'
 
+    return None
 
-def get_submission_status(submission_url, cookies):
+
+def get_submission_status(submission_url: str, cookies: RequestsCookieJar) -> SubmissionStatus:
     reply = requests.get(submission_url + '?json', cookies=cookies, headers=_HEADERS)
     return reply.json()
 
@@ -303,11 +325,11 @@ def get_submission_status(submission_url, cookies):
 _RED_COLOR = 31
 _GREEN_COLOR = 32
 _YELLOW_COLOR = 33
-def color(s, c):
+def color(s: str, c: int) -> str:
     return f'\x1b[{c}m{s}\x1b[0m'
 
 
-def show_judgement(submission_url, cfg):
+def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
     login_reply = login_from_config(cfg)
     while True:
         status = get_submission_status(submission_url, login_reply.cookies)
@@ -373,7 +395,7 @@ def show_judgement(submission_url, cfg):
         time.sleep(0.25)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(prog='kattis', description='Submit a solution to Kattis')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-a', '--assignment',
@@ -396,7 +418,7 @@ Overrides default guess (based on suffix of first filename)''')
     parser.add_argument('-f', '--force',
                         help='Force, no confirmation prompt before submission',
                         action='store_true')
-    parser.add_argument('files', nargs='+')
+    parser.add_argument('files', nargs='+', type=Path)
 
     args = parser.parse_args()
     files = args.files
@@ -407,7 +429,8 @@ Overrides default guess (based on suffix of first filename)''')
         print(exc)
         sys.exit(1)
 
-    problem, ext = os.path.splitext(os.path.basename(files[0]))
+    problem = files[0].stem
+    ext = files[0].suffix
     language = guess_language(ext, files)
     mainclass = guess_mainclass(language, files)
     tag = args.tag
@@ -436,7 +459,7 @@ extension "{ext}"''')
     except ConfigError as exc:
         print(exc)
         sys.exit(1)
-    except requests.exceptions.RequestException as err:
+    except RequestException as err:
         print('Login connection failed:', err)
         sys.exit(1)
 
@@ -465,7 +488,7 @@ extension "{ext}"''')
                         tag,
                         args.assignment,
                         args.contest)
-    except requests.exceptions.RequestException as err:
+    except RequestException as err:
         print('Submit connection failed:', err)
         sys.exit(1)
 
@@ -485,7 +508,7 @@ extension "{ext}"''')
     submission_url = None
     try:
         submission_url = get_submission_url(plain_result, cfg)
-    except configparser.NoOptionError:
+    except NoOptionError:
         pass
 
     if submission_url:
