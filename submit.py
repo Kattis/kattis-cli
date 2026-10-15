@@ -86,20 +86,45 @@ _LANGUAGE_GUESS = {
     '.ex': 'Elixir',
 }
 
-_GUESS_MAINCLASS = { 'Elixir', 'Erlang', 'Java', 'Kotlin', 'Modula-2', 'Scala' }
+_GUESS_MAINCLASS = {'Elixir', 'Erlang', 'Java', 'Kotlin', 'Modula-2', 'Scala'}
 _GUESS_MAINFILE = {
-    'Ada', 'Algol 68', 'APL', 'Bash', 'Crystal', 'Dart', 'Forth', 'Gerbil', 'JavaScript (Node.js)',
-    'JavaScript (SpiderMonkey)', 'Julia', 'Common Lisp', 'Lua', 'Nim', 'Octave', 'Pascal', 'Perl', 'PHP',
-	'Python 2', 'Python 3', 'Racket', 'Ruby', 'Rust', 'Simula', 'Smalltalk', 'SNOBOL', 'TypeScript', 'Zig',
+    'Ada',
+    'Algol 68',
+    'APL',
+    'Bash',
+    'Crystal',
+    'Dart',
+    'Forth',
+    'Gerbil',
+    'JavaScript (Node.js)',
+    'JavaScript (SpiderMonkey)',
+    'Julia',
+    'Common Lisp',
+    'Lua',
+    'Nim',
+    'Octave',
+    'Pascal',
+    'Perl',
+    'PHP',
+    'Python 2',
+    'Python 3',
+    'Racket',
+    'Ruby',
+    'Rust',
+    'Simula',
+    'Smalltalk',
+    'SNOBOL',
+    'TypeScript',
+    'Zig',
 }
 
-_HEADERS = { 'User-Agent': 'kattis-cli-submit' }
+_HEADERS = {'User-Agent': 'kattis-cli-submit'}
 
 _RUNNING_STATUS = 5
 _COMPILE_ERROR_STATUS = 8
 _ACCEPTED_STATUS = 16
 _STATUS_MAP = {
-    0: 'New', # <invalid value>
+    0: 'New',  # <invalid value>
     1: 'New',
     2: 'Waiting for compile',
     3: 'Compiling',
@@ -139,18 +164,15 @@ def get_url(cfg: ConfigParser, option: str, default: str) -> str:
 
 
 def get_config() -> ConfigParser:
-    """Returns a ConfigParser object for the .kattisrc file(s)
-    """
+    """Returns a ConfigParser object for the .kattisrc file(s)"""
     cfg = ConfigParser()
     if _DEFAULT_CONFIG.exists():
         cfg.read(_DEFAULT_CONFIG)
 
     file = Path(__file__)
 
-    if not cfg.read([Path.home() / '.kattisrc',
-                     file.parent / '.kattisrc',
-                     file.resolve().parent / '.kattisrc']):
-        raise ConfigError('''\
+    if not cfg.read([Path.home() / '.kattisrc', file.parent / '.kattisrc', file.resolve().parent / '.kattisrc']):
+        raise ConfigError("""\
 I failed to read in a config file from your home directory or from the
 same directory as this script. To download a .kattisrc file please visit
 https://<kattis>/download/kattisrc
@@ -164,7 +186,7 @@ token: *********
 hostname: <kattis>
 loginurl: https://<kattis>/login
 submissionurl: https://<kattis>/submit
-submissionsurl: https://<kattis>/submissions''')
+submissionsurl: https://<kattis>/submissions""")
     return cfg
 
 
@@ -242,11 +264,11 @@ def login_from_config(cfg: ConfigParser) -> Response:
     except NoOptionError:
         pass
     if password is None and token is None:
-        raise ConfigError('''\
+        raise ConfigError("""\
 Your .kattisrc file appears corrupted. It must provide a token (or a
 KATTIS password).
 
-Please download a new .kattisrc file''')
+Please download a new .kattisrc file""")
 
     loginurl = get_url(cfg, 'loginurl', 'login')
     return login(loginurl, username, password, token)
@@ -275,7 +297,7 @@ def submit(
         'mainclass': mainclass,
         'problem': problem,
         'tag': tag,
-        'script': 'true'
+        'script': 'true',
     }
 
     if assignment is not None:
@@ -285,10 +307,7 @@ def submit(
     sub_files = []
     for f in files:
         with f.open('rb') as sub_file:
-            sub_files.append(('sub_file[]',
-                              (f.name,
-                               sub_file.read(),
-                               'application/octet-stream')))
+            sub_files.append(('sub_file[]', (f.name, sub_file.read(), 'application/octet-stream')))
 
     return requests.post(submit_url, data=data, files=sub_files, cookies=cookies, headers=_HEADERS)
 
@@ -328,6 +347,8 @@ def get_submission_status(submission_url: str, cookies: RequestsCookieJar) -> Su
 _RED_COLOR = 31
 _GREEN_COLOR = 32
 _YELLOW_COLOR = 33
+
+
 def color(s: str, c: int) -> str:
     return f'\x1b[{c}m{s}\x1b[0m'
 
@@ -367,14 +388,20 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
             else:
                 progress = ''
                 for i in re.findall(r'<i class="([\w\- ]*)" title', status['row_html']):
-                    if 'is-empty' in i: break
-                    if 'accepted' in i: progress += color('.', _GREEN_COLOR)
-                    if 'rejected' in i: progress += color('x', _RED_COLOR)
+                    if 'is-empty' in i:
+                        break
+                    if 'accepted' in i:
+                        progress += color('.', _GREEN_COLOR)
+                    if 'rejected' in i:
+                        progress += color('x', _RED_COLOR)
 
                 # NB: We need to do the following math since len(color('.', _SOME_COLOR)) == 10
                 if status_id == _RUNNING_STATUS:
-                    progress = progress[:10*(testcases_done - 1)] + color('?', _YELLOW_COLOR)
-                print(f'[{progress}{" " * (9*testcases_done + testcases_total - len(progress))}]  {testcases_done} / {testcases_total}', end='')
+                    progress = progress[: 10 * (testcases_done - 1)] + color('?', _YELLOW_COLOR)
+                print(
+                    f'[{progress}{" " * (9 * testcases_done + testcases_total - len(progress))}]  {testcases_done} / {testcases_total}',
+                    end='',
+                )
 
         sys.stdout.flush()
 
@@ -389,7 +416,7 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
                     score = re.findall(r'\(([\d\.]+)\)', root.xpath('.//*[@data-type="status"]')[0].text_content())[0]
                 except:
                     score = ''
-                status_text += " (" + cpu_time + ', ' + score + ")" if score else " (" + cpu_time + ")"
+                status_text += ' (' + cpu_time + ', ' + score + ')' if score else ' (' + cpu_time + ')'
             except:
                 pass
             if status_id != _COMPILE_ERROR_STATUS:
@@ -402,26 +429,38 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
 def main() -> None:
     parser = argparse.ArgumentParser(prog='kattis', description='Submit a solution to Kattis')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-a', '--assignment',
-                        help='''Short name of assignment you want to submit to
-Overrides default guess (server guesses based on assignments you are in)''')
-    group.add_argument('-c', '--contest',
-                        help='''Short name of contest you want to submit to
-Overrides default guess (server guesses based on contests you are in)''')
-    parser.add_argument('-p', '--problem',
-                        help=''''Which problem to submit to.
-Overrides default guess (first part of first filename)''')
-    parser.add_argument('-m', '--mainclass',
-                        help='''Sets mainclass.
-Overrides default guess (first part of first filename)''')
-    parser.add_argument('-l', '--language',
-                        help='''Sets language.
-Overrides default guess (based on suffix of first filename)''')
-    parser.add_argument('-t', '--tag',
-                        help=argparse.SUPPRESS)
-    parser.add_argument('-f', '--force',
-                        help='Force, no confirmation prompt before submission',
-                        action='store_true')
+    group.add_argument(
+        '-a',
+        '--assignment',
+        help="""Short name of assignment you want to submit to
+Overrides default guess (server guesses based on assignments you are in)""",
+    )
+    group.add_argument(
+        '-c',
+        '--contest',
+        help="""Short name of contest you want to submit to
+Overrides default guess (server guesses based on contests you are in)""",
+    )
+    parser.add_argument(
+        '-p',
+        '--problem',
+        help="""'Which problem to submit to.
+Overrides default guess (first part of first filename)""",
+    )
+    parser.add_argument(
+        '-m',
+        '--mainclass',
+        help="""Sets mainclass.
+Overrides default guess (first part of first filename)""",
+    )
+    parser.add_argument(
+        '-l',
+        '--language',
+        help="""Sets language.
+Overrides default guess (based on suffix of first filename)""",
+    )
+    parser.add_argument('-t', '--tag', help=argparse.SUPPRESS)
+    parser.add_argument('-f', '--force', help='Force, no confirmation prompt before submission', action='store_true')
     parser.add_argument('files', nargs='+', type=Path)
 
     args = parser.parse_args()
@@ -483,15 +522,7 @@ extension "{ext}"''')
         confirm_or_die(problem, language, files, mainclass, tag)
 
     try:
-        result = submit(submit_url,
-                        login_reply.cookies,
-                        problem,
-                        language,
-                        files,
-                        mainclass,
-                        tag,
-                        args.assignment,
-                        args.contest)
+        result = submit(submit_url, login_reply.cookies, problem, language, files, mainclass, tag, args.assignment, args.contest)
     except RequestException as err:
         print('Submit connection failed:', err)
         sys.exit(1)
