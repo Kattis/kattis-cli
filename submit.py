@@ -339,9 +339,14 @@ def get_submission_url(submit_response: str, cfg: ConfigParser) -> str | None:
     return None
 
 
-def get_submission_status(submission_url: str, cookies: RequestsCookieJar) -> SubmissionStatus:
+def get_submission_status(submission_url: str, cookies: RequestsCookieJar) -> tuple[SubmissionStatus, float | None]:
+    """Returns the submission status and the number of seconds to wait until
+    the next poll, or None if Kattis says we should stop polling.
+    """
     reply = requests.get(submission_url + '?json', cookies=cookies, headers=_HEADERS)
-    return reply.json()
+    next_poll_ms = reply.headers.get('X-Kattis-Nextpoll')
+    next_poll = int(next_poll_ms) / 1000 if next_poll_ms is not None else None
+    return reply.json(), next_poll
 
 
 _RED_COLOR = 31
@@ -356,7 +361,7 @@ def color(s: str, c: int) -> str:
 def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
     login_reply = login_from_config(cfg)
     while True:
-        status = get_submission_status(submission_url, login_reply.cookies)
+        status, next_poll = get_submission_status(submission_url, login_reply.cookies)
         status_id = status['status_id']
         testcases_done = status['testcase_index']
         testcases_total = status['row_html'].count('<i') - 1
@@ -423,7 +428,12 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
                 print(color(status_text, _GREEN_COLOR if success else _RED_COLOR))
             return success
 
-        time.sleep(0.25)
+        if next_poll is None:
+            print()
+            print(f'Stopped polling before judging finished, see {submission_url}')
+            return False
+
+        time.sleep(next_poll)
 
 
 def main() -> None:
