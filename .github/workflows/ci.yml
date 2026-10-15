@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
       - run: uv run --locked ruff check --output-format=github
+      - run: uv run --locked ruff format --diff
 
   pyrefly:
     runs-on: ubuntu-latest

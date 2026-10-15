@@ -7,6 +7,11 @@ repos:
         entry: uv run --locked ruff check
         language: system
         types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --locked ruff format
+        language: system
+        types: [python]
       - id: pyrefly
         name: pyrefly
         entry: uv run --locked pyrefly check
