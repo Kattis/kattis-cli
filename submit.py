@@ -11,7 +11,6 @@ import re
 import sys
 import time
 from configparser import ConfigParser, NoOptionError
-from os.path import expanduser
 from pathlib import Path
 from typing import TypedDict
 
@@ -146,12 +145,9 @@ def get_config() -> ConfigParser:
     if _DEFAULT_CONFIG.exists():
         cfg.read(_DEFAULT_CONFIG)
 
-    try:
-        file = Path(__file__)
-    except NameError:
-        file = Path(sys.argv[0])
+    file = Path(__file__)
 
-    if not cfg.read([Path(expanduser('~/.kattisrc')),
+    if not cfg.read([Path.home() / '.kattisrc',
                      file.parent / '.kattisrc',
                      file.resolve().parent / '.kattisrc']):
         raise ConfigError('''\
