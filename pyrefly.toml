@@ -1,0 +1,2 @@
+project-includes = ['submit.py']
+python-version = '3.10'

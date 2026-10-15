@@ -355,9 +355,10 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
             print(f'\r{color(status_text, _RED_COLOR)}', end='')
             try:
                 root = fragment_fromstring(status['feedback_html'], create_parent=True)
-                error = root.find('.//pre').text
-                print(color(':', _RED_COLOR))
-                print(error, end='')
+                pre = root.find('.//pre')
+                if pre is not None:
+                    print(color(':', _RED_COLOR))
+                    print(pre.text, end='')
             except:
                 pass
         elif status_id < _RUNNING_STATUS:
