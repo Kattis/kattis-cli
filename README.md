@@ -5,21 +5,20 @@ Kattis online judge command line tool written in Python. Requires Python 3.
 # Install the client
 
 Run `git clone https://github.com/Kattis/kattis-cli` to clone the repository.
-To run the client directly, `cd` into the `kattis-cli` directory and run `python submit.py`.
+To run the client directly, `cd` into the `kattis-cli` directory and run `uv run submit.py` (recommended, see [Required Packages](#required-packages)) or `python3 submit.py`.
 
 See the section for your operating system below for instructions on how to install the submission client as a command runnable from anywhere on your file system.
-
-If the `python` command is not installed, try using `python3` instead.
 
 ## Windows
 
 To run the client as a command, you can create a file `kattis.bat` in `kattis-cli`:
 ```bat
 @echo off
-python %~dp0\submit.py %*
+uv run %~dp0\submit.py %*
 ```
 
-If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python` with `<venv>\Scripts\python`, where `<venv>` is the path to your environment.
+If you are not using uv, replace `uv run` with `python3`.
+If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python3` with `<venv>\Scripts\python`, where `<venv>` is the path to your environment.
 
 To install it, you can add the `kattis-cli` directory to your `%PATH%` variable.
 To do that, run `setx PATH "%PATH%;C:\Users\user\Desktop\kattis-cli"` where `C:\Users\user\Desktop\kattis-cli` is the path to your cloned repository.
@@ -27,13 +26,19 @@ You can now run the command `kattis` from anywhere!
 
 ## MacOS/Linux
 
-To run the client as a command, you can create an executable file `kattis` in `kattis-cli`:
+If you have [uv](https://docs.astral.sh/uv/) installed, `submit.py` can be run directly as `./submit.py`, and uv will take care of the dependencies.
+To run the client as a command, you can create a symlink named `kattis` in `kattis-cli`:
 ```sh
-#!/bin/sh
-python "${BASH_SOURCE%/*}/submit.py" "$@"
+ln -s submit.py kattis
 ```
 
-If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python` with `<venv>/bin/python`, where `<venv>` is the path to your environment.
+If you are not using uv, you can instead create an executable file `kattis` in `kattis-cli`:
+```sh
+#!/bin/sh
+python3 "${BASH_SOURCE%/*}/submit.py" "$@"
+```
+
+If you are using a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/), replace `python3` with `<venv>/bin/python3`, where `<venv>` is the path to your environment.
 
 To install it, you can add the `kattis-cli` directory to your `$PATH` variable.
 To do that, open the file `~/.bash_profile` in a text editor and add the line `export PATH="$PATH:/Users/user/Desktop/kattis-cli"`, where `/Users/user/Desktop/kattis-cli` is the path to the `kattis-cli` directory, at the end of the file.
@@ -53,6 +58,12 @@ Let's assume you're solving the problem [Hello World!](https://open.kattis.com/p
 ## Required Packages
 
 The client requires the `requests` and `lxml` PyPi packages.
+
+The easiest way to handle this is to use [uv](https://docs.astral.sh/uv/).
+`submit.py` declares its dependencies using [inline script metadata](https://packaging.python.org/en/latest/specifications/inline-script-metadata/) (PEP 723), so `uv run submit.py` (or just `./submit.py` on MacOS/Linux) automatically runs the client in an isolated environment with the required packages.
+`pipx run submit.py` works as well.
+
+If you do not want to use uv, you can install the packages yourself.
 To install them, you can `cd` into the `kattis-cli` directory and run the command `pip install -U -r requirements.txt`.
 Alternatively, you can install them directly using `pip install -U requests lxml`.
 
@@ -65,7 +76,8 @@ If you plan to modify the client itself, the package `types-lxml` makes this mor
 ## Common Errors
 
 If you get an error message like this: `ModuleNotFoundError: No module named 'requests'` when you run `kattis` it's because the module 'requests' isn't installed.
-To install the module, follow the above instructions or check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer.
+The easiest fix is to run the client using uv, as described above.
+Otherwise, to install the module, follow the above instructions or check out [this](https://stackoverflow.com/a/17309309/4132739) StackOverflow answer.
 If you are using a virtual environment, make sure you activated it before installing the packages *and* before running the client.
 
 If you get an error message like this: `This environment is externally managed` when trying to install the required packages, the recommended solution is to use a [virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).
