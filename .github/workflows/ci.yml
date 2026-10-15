@@ -6,17 +6,14 @@ on:
   pull_request:
 
 jobs:
-  ruff:
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
-      - run: uv run --locked ruff check --output-format=github
-      - run: uv run --locked ruff format --diff
-
-  pyrefly:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
-      - run: uv run --locked pyrefly check --output-format=full-text-with-github
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: ruff check
+        run: uv run --locked ruff check --output-format=github
+      - name: ruff format
+        run: uv run --locked ruff format --diff
+      - name: pyrefly
+        run: uv run --locked pyrefly check --output-format=full-text-with-github
