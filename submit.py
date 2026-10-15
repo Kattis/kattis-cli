@@ -8,18 +8,18 @@
 # ///
 import argparse
 import re
-import requests
 import sys
 import time
 from configparser import ConfigParser, NoOptionError
 from os.path import expanduser
 from pathlib import Path
+from typing import TypedDict
+
+import requests
+from lxml.html import fragment_fromstring
 from requests import Response
 from requests.cookies import RequestsCookieJar
 from requests.exceptions import RequestException
-from typing import TypedDict
-
-from lxml.html import fragment_fromstring
 
 _DEFAULT_CONFIG = Path('/usr/local/etc/kattisrc')
 _LANGUAGE_GUESS = {
@@ -459,7 +459,7 @@ No language specified, and I failed to guess language from filename
 extension "{ext}"''')
         sys.exit(1)
 
-    files = sorted(list(set(args.files)))
+    files = sorted(set(args.files))
 
     try:
         login_reply = login_from_config(cfg)
@@ -470,7 +470,7 @@ extension "{ext}"''')
         print('Login connection failed:', err)
         sys.exit(1)
 
-    if not login_reply.status_code == 200:
+    if login_reply.status_code != 200:
         print('Login failed.')
         if login_reply.status_code == 403:
             print('Incorrect username or password/token (403)')
