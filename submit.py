@@ -1,5 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
+# requires-python = ">=3.10"
 # dependencies = [
 #   "lxml",
 #   "requests",
@@ -7,18 +8,17 @@
 # ///
 import argparse
 import re
-import requests
 import sys
 import time
 from configparser import ConfigParser, NoOptionError
-from os.path import expanduser
 from pathlib import Path
+from typing import TypedDict
+
+import requests
+from lxml.html import fragment_fromstring
 from requests import Response
 from requests.cookies import RequestsCookieJar
 from requests.exceptions import RequestException
-from typing import TypedDict
-
-from lxml.html import fragment_fromstring
 
 _DEFAULT_CONFIG = Path('/usr/local/etc/kattisrc')
 _LANGUAGE_GUESS = {
@@ -145,12 +145,9 @@ def get_config() -> ConfigParser:
     if _DEFAULT_CONFIG.exists():
         cfg.read(_DEFAULT_CONFIG)
 
-    try:
-        file = Path(__file__)
-    except NameError:
-        file = Path(sys.argv[0])
+    file = Path(__file__)
 
-    if not cfg.read([Path(expanduser('~/.kattisrc')),
+    if not cfg.read([Path.home() / '.kattisrc',
                      file.parent / '.kattisrc',
                      file.resolve().parent / '.kattisrc']):
         raise ConfigError('''\
@@ -354,9 +351,10 @@ def show_judgement(submission_url: str, cfg: ConfigParser) -> bool:
             print(f'\r{color(status_text, _RED_COLOR)}', end='')
             try:
                 root = fragment_fromstring(status['feedback_html'], create_parent=True)
-                error = root.find('.//pre').text
-                print(color(':', _RED_COLOR))
-                print(error, end='')
+                pre = root.find('.//pre')
+                if pre is not None:
+                    print(color(':', _RED_COLOR))
+                    print(pre.text, end='')
             except:
                 pass
         elif status_id < _RUNNING_STATUS:
@@ -458,7 +456,7 @@ No language specified, and I failed to guess language from filename
 extension "{ext}"''')
         sys.exit(1)
 
-    files = sorted(list(set(args.files)))
+    files = sorted(set(args.files))
 
     try:
         login_reply = login_from_config(cfg)
@@ -469,7 +467,7 @@ extension "{ext}"''')
         print('Login connection failed:', err)
         sys.exit(1)
 
-    if not login_reply.status_code == 200:
+    if login_reply.status_code != 200:
         print('Login failed.')
         if login_reply.status_code == 403:
             print('Incorrect username or password/token (403)')

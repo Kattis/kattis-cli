@@ -1,0 +1,28 @@
+# Only used for dev tooling; submit.py is a standalone script (see its PEP 723 block).
+# No [build-system], so uv treats this as a virtual project and never builds or installs it.
+[project]
+name = 'kattis-cli'
+version = '0'
+requires-python = '>=3.10'
+
+[dependency-groups]
+dev = [
+    'ruff==0.17.0',
+    'pyrefly==1.3.2',
+    'types-lxml',
+    # Repeated from submit.py's PEP 723 block, so pyrefly can see their types
+    'lxml',
+    'requests',
+]
+
+[tool.ruff]
+line-length = 130
+
+[tool.ruff.lint]
+ignore = ['E722', 'S110', 'SIM102']
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.pyrefly]
+project-includes = ['submit.py']
