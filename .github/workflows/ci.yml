@@ -11,14 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
-      - run: uvx ruff@0.17.0 check --output-format=github
+      - run: uv run --locked ruff check --output-format=github
 
   pyrefly:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
-      - run: uv sync --script submit.py --locked
-      # lxml has no inline types and its stubs are not in typeshed (which pyrefly bundles).
-      - run: uv pip install --python "$(uv python find --script submit.py)" types-lxml==2026.2.16
-      - run: uvx pyrefly@1.3.2 check --python-interpreter-path "$(uv python find --script submit.py)" --output-format=full-text-with-github
+      - run: uv run --locked pyrefly check --output-format=full-text-with-github
