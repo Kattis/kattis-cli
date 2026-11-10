@@ -324,7 +324,7 @@ def confirm_or_die(problem: str, language: str, files: list[Path], mainclass: st
     if tag:
         print('Tag:', tag)
     print('Submit (y/N)?')
-    if sys.stdin.readline().upper()[:-1] != 'Y':
+    if sys.stdin.readline().strip().upper() != 'Y':
         print('Cancelling')
         sys.exit(1)
 
